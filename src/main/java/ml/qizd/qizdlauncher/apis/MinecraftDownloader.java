@@ -1,6 +1,7 @@
-package ml.qizd.qizdlauncher;
+package ml.qizd.qizdlauncher.apis;
 
 import com.google.gson.Gson;
+import ml.qizd.qizdlauncher.Settings;
 import ml.qizd.qizdlauncher.models.AssetsInfo;
 import ml.qizd.qizdlauncher.models.VersionInfo;
 import ml.qizd.qizdlauncher.models.VersionManifest;
@@ -21,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 
 public class MinecraftDownloader {
-    private static final String DOWNLOAD_PATH = "F:/launcher";
     private static final String OS_TYPE = "windows";
     private static final String MINECRAFT_VERSION = "1.19.2";
 
@@ -72,8 +72,8 @@ public class MinecraftDownloader {
             if (!response.isSuccessful() || response.body() == null)
                 throw new IOException("An error occured while trying to download client jar");
 
-            new File(DOWNLOAD_PATH).mkdirs();
-            Files.write(Path.of(DOWNLOAD_PATH, "client.jar"), response.body().bytes(), StandardOpenOption.CREATE);
+            new File(Settings.getHomePath()).mkdirs();
+            Files.write(Path.of(Settings.getHomePath(), "client.jar"), response.body().bytes(), StandardOpenOption.CREATE);
         }
     }
 
@@ -90,7 +90,7 @@ public class MinecraftDownloader {
                 if (!response.isSuccessful() || response.body() == null)
                     throw new IOException("An error occured while trying to download library " + library.name);
 
-                Path path = Path.of(DOWNLOAD_PATH, "libraries", library.downloads.artifact.path);
+                Path path = Path.of(Settings.getHomePath(), "libraries", library.downloads.artifact.path);
                 path.getParent().toFile().mkdirs();
                 Files.write(path, response.body().bytes(), StandardOpenOption.CREATE);
             }
@@ -104,10 +104,10 @@ public class MinecraftDownloader {
         }
 
         String JvmArguments = "-cp %s".formatted(classPath);
-        String GameArguments = "--version %s --accessToken %s".formatted(MINECRAFT_VERSION, "sdf");
+        String GameArguments = "--version %s --userType legacy".formatted(MINECRAFT_VERSION);
         String startCommand = String.format("java %s net.minecraft.client.main.Main %s", JvmArguments, GameArguments);
 
-        Path path = Path.of(DOWNLOAD_PATH, "launch.bat");
+        Path path = Path.of(Settings.getHomePath(), "launch.bat");
         Files.write(path, startCommand.getBytes(), StandardOpenOption.CREATE);
     }
 
@@ -120,7 +120,7 @@ public class MinecraftDownloader {
             if (!response.isSuccessful() || response.body() == null)
                 throw new IOException("An error occured while trying to get assets info");
 
-            Path path = Path.of(DOWNLOAD_PATH, "assets", "indexes", versionInfo.assets + ".json");
+            Path path = Path.of(Settings.getHomePath(), "assets", "indexes", versionInfo.assets + ".json");
             path.getParent().toFile().mkdirs();
             byte[] bytes = response.body().bytes();
             Files.write(path, bytes, StandardOpenOption.CREATE);
@@ -139,7 +139,7 @@ public class MinecraftDownloader {
                 if (!response.isSuccessful() || response.body() == null)
                     throw new IOException("An error occured while trying to download assets " + entry.hash);
 
-                Path path = Path.of(DOWNLOAD_PATH, "assets", "objects", entry.hash.substring(0, 2), entry.hash);
+                Path path = Path.of(Settings.getHomePath(), "assets", "objects", entry.hash.substring(0, 2), entry.hash);
                 path.getParent().toFile().mkdirs();
                 Files.write(path, response.body().bytes(), StandardOpenOption.CREATE);
             }

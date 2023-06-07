@@ -4,19 +4,49 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<VBox alignment="CENTER" maxHeight="480.0" maxWidth="640.0" minHeight="480.0" minWidth="640.0" prefHeight="480.0" prefWidth="640.0" spacing="20.0" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ml.qizd.qizdlauncher.HelloController">
+<VBox alignment="CENTER" maxHeight="480.0" maxWidth="640.0" minHeight="480.0" minWidth="640.0" prefHeight="480.0" prefWidth="640.0" spacing="10.0" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ml.qizd.qizdlauncher.MainController">
     <padding>
         <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
     </padding>
-   <VBox alignment="CENTER" prefHeight="200.0" prefWidth="100.0" spacing="5.0">
+   <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0">
       <children>
-         <TextField fx:id="login" promptText="Login" />
-         <PasswordField fx:id="password" promptText="Password" />
-         <Button fx:id="sign_in" mnemonicParsing="false" onAction="#onSignInButtonCLick" text="Sign in" />
+         <VBox alignment="CENTER" prefHeight="200.0" prefWidth="100.0">
+            <children>
+               <TextField fx:id="no_auth_name" promptText="Name" />
+               <Button mnemonicParsing="false" onAction="#onAddNoAuthProfileClick" text="Add" />
+            </children>
+         </VBox>
+         <Separator orientation="VERTICAL" prefHeight="200.0" />
+         <VBox alignment="CENTER" prefHeight="200.0" prefWidth="100.0" spacing="5.0">
+            <children>
+               <TextField fx:id="login" promptText="Login" />
+               <PasswordField fx:id="password" promptText="Password" />
+               <Button fx:id="sign_in" mnemonicParsing="false" onAction="#onSignInButtonCLick" text="Sign in" />
+            </children>
+         </VBox>
+         <Separator orientation="VERTICAL" prefHeight="200.0" />
+         <VBox alignment="CENTER">
+            <children>
+               <ChoiceBox fx:id="profiles" prefWidth="150.0" />
+               <Button mnemonicParsing="false" text="Clear" />
+            </children>
+         </VBox>
       </children>
-   </VBox>
+   </HBox>
 
-    <Label fx:id="welcomeText" />
-    <Button onAction="#onHelloButtonClick" text="Download Minecraft" />
+    <Label fx:id="welcomeText" text="Message" />
+   <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0">
+      <children>
+         <Label fx:id="home_path" text="/path/to/home" />
+         <Button mnemonicParsing="false" onAction="#onSelectHomePathButtonClick" text="..." />
+      </children>
+   </HBox>
+   <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0">
+      <children>
+          <Button onAction="#onHelloButtonClick" text="Download Minecraft" />
+         <Button mnemonicParsing="false" onAction="#onDownloadAuthLibInjectorClick" text="Download AuthLibInjector" />
+         <Button mnemonicParsing="false" onAction="#onLaunchButtonClick" text="Launch Minecraft" />
+      </children>
+   </HBox>
    <ProgressBar fx:id="progressBar" prefWidth="200.0" progress="0.0" />
 </VBox>

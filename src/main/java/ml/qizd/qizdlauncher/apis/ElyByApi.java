@@ -1,6 +1,8 @@
-package ml.qizd.qizdlauncher;
+package ml.qizd.qizdlauncher.apis;
 
 import com.google.gson.Gson;
+import ml.qizd.qizdlauncher.models.ElyByResponse;
+import ml.qizd.qizdlauncher.users.ElyByUserProfile;
 import okhttp3.*;
 
 public class ElyByApi {
@@ -8,11 +10,11 @@ public class ElyByApi {
     private static final OkHttpClient client = new OkHttpClient();
     private static final Gson gson = new Gson();
 
-    public static String getAuthToken(String username, String password) throws Exception {
+    public static ElyByUserProfile auth(String username, String password) throws Exception {
         FormBody body = new FormBody.Builder()
                 .add("username", username)
                 .add("password", password)
-                .add("clientToken", "asdfsdf")
+                .add("clientToken", "qizd-launcher")
                 .add("requestUser", "true")
                 .build();
 
@@ -22,7 +24,11 @@ public class ElyByApi {
                 .build();
 
         try (Response response = client.newCall(request).execute()) {
-            return response.body().string();
+            ElyByResponse e = gson.fromJson(response.body().charStream(), ElyByResponse.class);
+            if (e.error != null)
+                throw new Exception(e.error + "\n" + e.errorMessage);
+
+            return new ElyByUserProfile(e.user.username, e.accessToken, e.user.id);
         }
     }
 }
