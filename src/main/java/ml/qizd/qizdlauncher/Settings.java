@@ -37,6 +37,11 @@ public class Settings {
         write();
     }
 
+    public static void removeUser(UserProfile profile) {
+        profiles.remove(profile);
+        write();
+    }
+
     public static void read() {
         Path userProfiles = Path.of(getHomePath(), "profiles.bin");
         try (FileReader reader = new FileReader(userProfiles.toFile())) {
@@ -44,6 +49,8 @@ public class Settings {
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
+
+        System.out.println(profiles);
     }
 
     public static void write() {
@@ -59,5 +66,7 @@ public class Settings {
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
+
+        System.out.println("finished writing");
     }
 }

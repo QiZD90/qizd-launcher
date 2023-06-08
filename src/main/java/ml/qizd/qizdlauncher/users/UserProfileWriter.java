@@ -13,11 +13,7 @@ public class UserProfileWriter {
     private static void writeElyBy(ElyByUserProfile profile, FileWriter writer) throws IOException {
         writer.write(profile.getName().length());
         writer.write(profile.getName());
-
-        writer.write(profile.getAccessToken().length());
         writer.write(profile.getAccessToken());
-
-        writer.write(profile.getUUID().length());
         writer.write(profile.getUUID());
     }
 

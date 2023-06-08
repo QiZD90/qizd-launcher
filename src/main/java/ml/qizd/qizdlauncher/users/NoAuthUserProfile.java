@@ -13,6 +13,10 @@ public class NoAuthUserProfile implements UserProfile {
         return "--username %s --accessToken none".formatted(getName());
     }
 
+    public String toString() {
+        return "[NOAUTH] %s".formatted(getName());
+    }
+
     public NoAuthUserProfile(String name) {
         this.name = name;
     }

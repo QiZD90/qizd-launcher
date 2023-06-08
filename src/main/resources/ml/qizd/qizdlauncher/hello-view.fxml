@@ -28,7 +28,7 @@
          <VBox alignment="CENTER">
             <children>
                <ChoiceBox fx:id="profiles" prefWidth="150.0" />
-               <Button mnemonicParsing="false" text="Clear" />
+               <Button mnemonicParsing="false" onAction="#onClearButtonClick" text="Clear" />
             </children>
          </VBox>
       </children>

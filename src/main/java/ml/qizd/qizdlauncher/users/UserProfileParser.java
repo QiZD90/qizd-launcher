@@ -23,14 +23,12 @@ public class UserProfileParser {
         if (reader.read(name, 0, nameLength) == -1)
             throw new ParsingException();
 
-        int accessTokenLength = reader.read();
-        char[] accessToken = new char[accessTokenLength];
-        if (reader.read(accessToken, 0, accessTokenLength) == -1)
+        char[] accessToken = new char[ElyByUserProfile.ACCESS_TOKEN_LENGTH];
+        if (reader.read(accessToken, 0, ElyByUserProfile.ACCESS_TOKEN_LENGTH) == -1)
             throw new ParsingException();
 
-        int UUIDLength = reader.read();
-        char[] UUID = new char[UUIDLength];
-        if (reader.read(UUID, 0, UUIDLength) == -1)
+        char[] UUID = new char[ElyByUserProfile.UUID_LENGTH];
+        if (reader.read(UUID, 0, ElyByUserProfile.UUID_LENGTH) == -1)
             throw new ParsingException();
 
         return new ElyByUserProfile(new String(name), new String(accessToken), new String(UUID));

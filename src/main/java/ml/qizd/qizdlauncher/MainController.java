@@ -49,6 +49,22 @@ public class MainController implements Initializable {
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         home_path.setText(Settings.getHomePath());
+        Settings.read();
+        for (UserProfile profile : Settings.getUserProfiles()) {
+            if (profile instanceof ElyByUserProfile) {
+                try {
+                    ElyByApi.refresh((ElyByUserProfile) profile);
+                } catch (Exception e) {
+                    welcomeText.setText("Failed to refresh ely.by user " + profile);
+                    System.out.println(e.getMessage());
+                    Settings.removeUser(profile);
+                }
+            }
+        }
+        updateProfiles();
+    }
+
+    private void updateProfiles() {
         ObservableList<UserProfile> ol = FXCollections.observableArrayList(Settings.getUserProfiles());
         profiles.setItems(ol);
     }
@@ -63,6 +79,7 @@ public class MainController implements Initializable {
         welcomeText.setText("Created no auth profile");
         Settings.addUserProfile(new NoAuthUserProfile(name));
         no_auth_name.setText("");
+        updateProfiles();
     }
 
     @FXML
@@ -75,6 +92,8 @@ public class MainController implements Initializable {
         } catch (Exception e) {
             welcomeText.setText("ERROR: " + e.getMessage());
         }
+
+        updateProfiles();
     }
 
     @FXML
@@ -88,6 +107,12 @@ public class MainController implements Initializable {
         }
 
         welcomeText.setText("Successfully downloaded minecraft");
+    }
+
+    @FXML
+    protected void onClearButtonClick() {
+        Settings.clearUserProfiles();
+        updateProfiles();
     }
 
     @FXML
@@ -106,7 +131,7 @@ public class MainController implements Initializable {
     @FXML
     protected void onSelectHomePathButtonClick() {
         DirectoryChooser directoryChooser = new DirectoryChooser();
-        File file = directoryChooser.showDialog(null);
+        File file = directoryChooser.showDialog(welcomeText.getScene().getWindow());
         if (file == null)
             return;
 
