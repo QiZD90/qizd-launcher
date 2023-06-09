@@ -15,7 +15,7 @@ import javafx.util.Duration;
 import ml.qizd.qizdlauncher.apis.AuthLibInjectorDownloader;
 import ml.qizd.qizdlauncher.apis.ElyByApi;
 import ml.qizd.qizdlauncher.apis.FabricApi;
-import ml.qizd.qizdlauncher.apis.MinecraftDownloader;
+import ml.qizd.qizdlauncher.apis.MinecraftApi;
 import ml.qizd.qizdlauncher.models.FabricMeta;
 import ml.qizd.qizdlauncher.models.VersionInfo;
 import ml.qizd.qizdlauncher.users.ElyByUserProfile;
@@ -25,9 +25,6 @@ import ml.qizd.qizdlauncher.users.UserProfile;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.ResourceBundle;
 
 public class MainController implements Initializable {
@@ -78,7 +75,7 @@ public class MainController implements Initializable {
 
         Timeline tick = new Timeline(
                 new KeyFrame(Duration.millis(100), t -> {
-                    progress.setText(MinecraftDownloader.getDownloadingFileName());
+                    progress.setText(MinecraftApi.getDownloadingFileName());
                 })
         );
         tick.setCycleCount(Timeline.INDEFINITE);
@@ -87,7 +84,7 @@ public class MainController implements Initializable {
 
         try {
             Settings.setArguments(CommandLineArguments
-                    .fromVersionInfo(MinecraftDownloader.getVersionInfo())
+                    .fromVersionInfo(MinecraftApi.getVersionInfo())
                     .patchAuthLib()
                     .patchFabric(FabricApi.download())
             );
@@ -134,7 +131,7 @@ public class MainController implements Initializable {
 
         downloadThread = new Thread(() -> {
             try {
-                VersionInfo info = MinecraftDownloader.download();
+                VersionInfo info = MinecraftApi.download();
                 System.out.println("Downloaded minecraft");
                 AuthLibInjectorDownloader.download();
                 System.out.println("Downloaded authlib");

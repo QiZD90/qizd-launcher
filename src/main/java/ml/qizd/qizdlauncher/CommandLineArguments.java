@@ -1,7 +1,7 @@
 package ml.qizd.qizdlauncher;
 
 import ml.qizd.qizdlauncher.apis.AuthLibInjectorDownloader;
-import ml.qizd.qizdlauncher.apis.MinecraftDownloader;
+import ml.qizd.qizdlauncher.apis.MinecraftApi;
 import ml.qizd.qizdlauncher.models.FabricMeta;
 import ml.qizd.qizdlauncher.models.VersionInfo;
 import ml.qizd.qizdlauncher.users.UserProfile;
@@ -19,14 +19,14 @@ public class CommandLineArguments implements Serializable {
 
     public static CommandLineArguments fromVersionInfo(VersionInfo info) {
         CommandLineArguments args = new CommandLineArguments();
-        args.gameArguments.add("--version " + MinecraftDownloader.MINECRAFT_VERSION);
+        args.gameArguments.add("--version " + MinecraftApi.MINECRAFT_VERSION);
         args.gameArguments.add("--assetsDir " + Path.of(Settings.getHomePath(), "assets"));
         args.gameArguments.add("--gameDir " + Path.of(Settings.getHomePath()));
         args.gameArguments.add("--assetIndex " + "1.19");
         args.mainClass = info.mainClass;
 
         for (VersionInfo.Library library: info.libraries) {
-            if (!library.shouldDownload(MinecraftDownloader.OS_TYPE))
+            if (!library.shouldDownload(MinecraftApi.OS_TYPE))
                 continue;
 
             args.classPaths.add("libraries/%s".formatted(library.downloads.artifact.path));

@@ -19,7 +19,7 @@ public class FabricApi {
 
     private static FabricMeta downloadMeta() throws IOException {
         Request request = new Request.Builder()
-                .url(API_URL + "/v2/versions/loader/%s/%s/profile/json".formatted(MinecraftDownloader.MINECRAFT_VERSION, LOADER_VERSION))
+                .url(API_URL + "/v2/versions/loader/%s/%s/profile/json".formatted(MinecraftApi.MINECRAFT_VERSION, LOADER_VERSION))
                 .build();
 
         try (Response response = client.newCall(request).execute()) {

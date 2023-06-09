@@ -12,16 +12,12 @@ import okhttp3.Response;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.List;
-import java.util.Map;
 
-public class MinecraftDownloader {
+public class MinecraftApi {
     public static final String OS_TYPE = "windows"; // TODO: refactor
     public static final String MINECRAFT_VERSION = "1.19.2";
 
