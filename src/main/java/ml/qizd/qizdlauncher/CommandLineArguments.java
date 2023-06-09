@@ -20,7 +20,7 @@ public class CommandLineArguments implements Serializable {
     public static CommandLineArguments fromVersionInfo(VersionInfo info) {
         CommandLineArguments args = new CommandLineArguments();
         args.gameArguments.add("--version " + MinecraftDownloader.MINECRAFT_VERSION);
-        args.gameArguments.add("--assetsDir " + "/assets");
+        args.gameArguments.add("--assetsDir " + Path.of(Settings.getHomePath(), "assets"));
         args.gameArguments.add("--gameDir " + Path.of(Settings.getHomePath()));
         args.gameArguments.add("--assetIndex " + "1.19");
         args.mainClass = info.mainClass;

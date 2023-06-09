@@ -62,7 +62,7 @@ public class MainController implements Initializable {
         home_path.setText(Settings.getHomePath());
         Settings.read();
 
-        //TODO: rewrite with iterator
+        //TODO: rewrite with iterator?
         for (UserProfile profile : Settings.getUserProfiles()) {
             if (profile instanceof ElyByUserProfile) {
                 try {
