@@ -35,7 +35,7 @@ public class ElyByUserProfile implements UserProfile {
 
     @Override
     public String getAuthArgs() {
-        return "--accessToken %s --username %s --uuid %s --userType legacy".formatted(name, accessToken, UUID);
+        return "--accessToken %s --username %s --uuid %s --userType legacy".formatted(accessToken, name, UUID);
     }
 
     public String toString() {
