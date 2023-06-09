@@ -4,6 +4,7 @@ module ml.qizd.qizdlauncher {
     requires com.google.gson;
     requires okhttp3;
     requires java.prefs;
+    requires org.jetbrains.annotations;
 
 
     opens ml.qizd.qizdlauncher to javafx.fxml;

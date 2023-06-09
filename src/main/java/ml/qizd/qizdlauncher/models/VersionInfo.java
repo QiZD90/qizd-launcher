@@ -57,4 +57,5 @@ public class VersionInfo {
     public String assets;
     public Downloads downloads;
     public Library[] libraries;
+    public String mainClass;
 }

@@ -1,5 +1,7 @@
 package ml.qizd.qizdlauncher;
 
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -9,9 +11,13 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TextField;
 import javafx.stage.DirectoryChooser;
+import javafx.util.Duration;
 import ml.qizd.qizdlauncher.apis.AuthLibInjectorDownloader;
 import ml.qizd.qizdlauncher.apis.ElyByApi;
+import ml.qizd.qizdlauncher.apis.FabricApi;
 import ml.qizd.qizdlauncher.apis.MinecraftDownloader;
+import ml.qizd.qizdlauncher.models.FabricMeta;
+import ml.qizd.qizdlauncher.models.VersionInfo;
 import ml.qizd.qizdlauncher.users.ElyByUserProfile;
 import ml.qizd.qizdlauncher.users.NoAuthUserProfile;
 import ml.qizd.qizdlauncher.users.UserProfile;
@@ -21,8 +27,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.ResourceBundle;
-import java.util.Set;
 
 public class MainController implements Initializable {
     @FXML
@@ -44,12 +50,19 @@ public class MainController implements Initializable {
     private ChoiceBox<UserProfile> profiles;
 
     @FXML
+    private Label progress;
+
+    @FXML
     private TextField no_auth_name;
+
+    Thread downloadThread = null;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         home_path.setText(Settings.getHomePath());
         Settings.read();
+
+        //TODO: rewrite with iterator
         for (UserProfile profile : Settings.getUserProfiles()) {
             if (profile instanceof ElyByUserProfile) {
                 try {
@@ -62,6 +75,25 @@ public class MainController implements Initializable {
             }
         }
         updateProfiles();
+
+        Timeline tick = new Timeline(
+                new KeyFrame(Duration.millis(100), t -> {
+                    progress.setText(MinecraftDownloader.getDownloadingFileName());
+                })
+        );
+        tick.setCycleCount(Timeline.INDEFINITE);
+
+        tick.play();
+
+        try {
+            Settings.setArguments(CommandLineArguments
+                    .fromVersionInfo(MinecraftDownloader.getVersionInfo())
+                    .patchAuthLib()
+                    .patchFabric(FabricApi.download())
+            );
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void updateProfiles() {
@@ -100,13 +132,24 @@ public class MainController implements Initializable {
     protected void onHelloButtonClick() {
         welcomeText.setText("Downloading Minecraft");
 
-        try {
-            MinecraftDownloader.download();
-        } catch (Exception e) {
-            welcomeText.setText("ERROR: " + e.getMessage());
-        }
+        downloadThread = new Thread(() -> {
+            try {
+                VersionInfo info = MinecraftDownloader.download();
+                System.out.println("Downloaded minecraft");
+                AuthLibInjectorDownloader.download();
+                System.out.println("Downloaded authlib");
+                FabricMeta meta = FabricApi.download();
+                System.out.println("Downloaded fabric");
 
-        welcomeText.setText("Successfully downloaded minecraft");
+                CommandLineArguments args = CommandLineArguments.fromVersionInfo(info).patchFabric(meta).patchAuthLib();
+                Settings.setArguments(args);
+            } catch (Exception e) {
+                //welcomeText.setText("ERROR: " + e.getMessage());
+                e.printStackTrace();
+            }
+        });
+
+        downloadThread.start();
     }
 
     @FXML
@@ -116,16 +159,7 @@ public class MainController implements Initializable {
     }
 
     @FXML
-    protected void onDownloadAuthLibInjectorClick() {
-        welcomeText.setText("Downloading authlib injector");
-
-        try {
-            AuthLibInjectorDownloader.download();
-        } catch (Exception e) {
-            welcomeText.setText("ERROR: " + e.getMessage());
-        }
-
-        welcomeText.setText("Successfully downloaded authlib injector");
+    protected void onDownloadModpackClick() {
     }
 
     @FXML
@@ -141,23 +175,18 @@ public class MainController implements Initializable {
 
     @FXML
     protected void onLaunchButtonClick() {
-        Path path;
-        path = Path.of(Settings.getHomePath(), "launch.bat");
-
-        if (!Files.exists(path)) {
-            welcomeText.setText("Download minecraft first");
-            return;
-        }
-
         if (profiles.getValue() == null) {
             welcomeText.setText("Create or select profile first");
             return;
         }
 
+        if (Settings.getArguments() == null) {
+            welcomeText.setText("Can't find minecraft launch settings; Re-download minecraft");
+            return;
+        }
+
         try {
-            String command = Files.readString(path);
-            command += " " + profiles.getValue().getAuthArgs();
-            System.out.println(command);
+            String command = Settings.getArguments().format(profiles.getValue());
             Process proc = Runtime.getRuntime().exec(command, new String[]{}, new File(Settings.getHomePath()));
             System.out.println(new String(proc.getInputStream().readAllBytes()));
         } catch (IOException e) {

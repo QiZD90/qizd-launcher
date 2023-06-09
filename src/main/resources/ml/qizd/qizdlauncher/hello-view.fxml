@@ -44,9 +44,10 @@
    <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0">
       <children>
           <Button onAction="#onHelloButtonClick" text="Download Minecraft" />
-         <Button mnemonicParsing="false" onAction="#onDownloadAuthLibInjectorClick" text="Download AuthLibInjector" />
+         <Button mnemonicParsing="false" onAction="#onDownloadModpackClick" text="Download Modpack" />
          <Button mnemonicParsing="false" onAction="#onLaunchButtonClick" text="Launch Minecraft" />
       </children>
    </HBox>
    <ProgressBar fx:id="progressBar" prefWidth="200.0" progress="0.0" />
+   <Label fx:id="progress" text="Progress: 0" />
 </VBox>
