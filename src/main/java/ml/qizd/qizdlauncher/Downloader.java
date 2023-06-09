@@ -7,6 +7,7 @@ import okhttp3.ResponseBody;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedWriter;
+import java.io.OutputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -41,8 +42,8 @@ public class Downloader {
                     return new Result(this.filePath.toString(), Result.Status.NOT_OK);
 
                 filePath.getParent().toFile().mkdirs();
-                try (BufferedWriter writer = Files.newBufferedWriter(filePath)){
-                    body.charStream().transferTo(writer);
+                try (OutputStream stream = Files.newOutputStream(filePath)){
+                    body.byteStream().transferTo(stream);
                 }
             } catch (Exception e) {
                 return new Result(this.filePath.toString(), Result.Status.NOT_OK);
@@ -58,12 +59,23 @@ public class Downloader {
     }
 
     public static abstract class Callback {
-        public void onProgress(Task.Result result) {}
-        public void onCompleted() {}
+        public abstract void onProgress(Task.Result result);
+        public abstract void onCompleted();
     }
 
     private ExecutorService threadPool = Executors.newFixedThreadPool(10);
     private OkHttpClient client = new OkHttpClient();
+
+    public void download(Downloader.Task task, @Nullable Downloader.Callback callback) {
+        try {
+            threadPool.submit(task).get();
+            if (callback != null) {
+                callback.onCompleted();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
     public void downloadAll(List<Downloader.Task> tasks, @Nullable Downloader.Callback callback) {
         try {

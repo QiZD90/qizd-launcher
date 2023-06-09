@@ -1,6 +1,8 @@
 package ml.qizd.qizdlauncher.apis;
 
 import com.google.gson.Gson;
+import ml.qizd.qizdlauncher.CallbackPrint;
+import ml.qizd.qizdlauncher.Downloader;
 import ml.qizd.qizdlauncher.Settings;
 import ml.qizd.qizdlauncher.models.FabricMeta;
 import okhttp3.OkHttpClient;
@@ -8,8 +10,11 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 import java.io.IOException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 public class FabricApi {
     private static String API_URL = "https://meta.fabricmc.net";
@@ -28,24 +33,23 @@ public class FabricApi {
         }
     }
 
-    private static void downloadLibraries(FabricMeta meta) throws IOException {
-        for (FabricMeta.Library library : meta.libraries) {
-            Request request = new Request.Builder()
-                    .url(library.url + library.getPath())
-                    .build();
+    private static void downloadLibraries(FabricMeta meta, Downloader downloader) throws IOException {
+        List<Downloader.Task> tasks = new ArrayList<>();
 
-            try (Response response = client.newCall(request).execute()) {
-                // TODO: hande non-successful call
-                Path path = Path.of(Settings.getHomePath(), "libraries/", library.getPath());
-                path.getParent().toFile().mkdirs();
-                Files.write(path, response.body().bytes());
-            }
+        for (FabricMeta.Library library : meta.libraries) {
+            tasks.add(downloader.taskFrom(
+                    new URL(library.url + library.getPath()),
+                    Path.of(Settings.getHomePath(), "libraries/", library.getPath())
+            ));
         }
+
+        downloader.downloadAll(tasks, new CallbackPrint());
     }
 
     public static FabricMeta download() throws IOException {
+        Downloader downloader = new Downloader();
         FabricMeta meta = downloadMeta();
-        downloadLibraries(meta);
+        downloadLibraries(meta, downloader);
 
         return meta;
     }

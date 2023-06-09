@@ -72,25 +72,6 @@ public class MainController implements Initializable {
             }
         }
         updateProfiles();
-
-        Timeline tick = new Timeline(
-                new KeyFrame(Duration.millis(100), t -> {
-                    progress.setText(MinecraftApi.getDownloadingFileName());
-                })
-        );
-        tick.setCycleCount(Timeline.INDEFINITE);
-
-        tick.play();
-
-        try {
-            Settings.setArguments(CommandLineArguments
-                    .fromVersionInfo(MinecraftApi.getVersionInfo())
-                    .patchAuthLib()
-                    .patchFabric(FabricApi.download())
-            );
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     private void updateProfiles() {

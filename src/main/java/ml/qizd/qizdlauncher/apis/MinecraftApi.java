@@ -1,6 +1,8 @@
 package ml.qizd.qizdlauncher.apis;
 
 import com.google.gson.Gson;
+import ml.qizd.qizdlauncher.CallbackPrint;
+import ml.qizd.qizdlauncher.Downloader;
 import ml.qizd.qizdlauncher.Settings;
 import ml.qizd.qizdlauncher.models.AssetsInfo;
 import ml.qizd.qizdlauncher.models.VersionInfo;
@@ -12,10 +14,13 @@ import okhttp3.Response;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MinecraftApi {
     public static final String OS_TYPE = "windows"; // TODO: refactor
@@ -26,11 +31,6 @@ public class MinecraftApi {
 
     private static final Gson gson = new Gson();
     private static final OkHttpClient client = new OkHttpClient();
-    private static String downloadingFile = "";
-
-    public static String getDownloadingFileName() {
-        return downloadingFile;
-    }
 
     private static String getVersionURL() throws Exception {
         Request request = new Request.Builder()
@@ -64,40 +64,27 @@ public class MinecraftApi {
         }
     }
 
-    private static void downloadClientJar(VersionInfo versionInfo) throws Exception {
-        Request request = new Request.Builder()
-                .url(versionInfo.downloads.client.url)
-                .build();
-
-        try (Response response = client.newCall(request).execute()) {
-            if (!response.isSuccessful() || response.body() == null)
-                throw new IOException("An error occured while trying to download client jar");
-
-            downloadingFile = "client.jar size: " + versionInfo.downloads.client.size.toString();
-            new File(Settings.getHomePath()).mkdirs();
-            Files.write(Path.of(Settings.getHomePath(), "client.jar"), response.body().bytes(), StandardOpenOption.CREATE);
-        }
+    private static void downloadClientJar(VersionInfo versionInfo, Downloader downloader) throws Exception {
+        Downloader.Task task = downloader.taskFrom(
+                new URL(versionInfo.downloads.client.url),
+                Path.of(Settings.getHomePath(), "client.jar")
+        );
+        downloader.download(task, new CallbackPrint());
     }
 
-    private static void downloadLibraries(VersionInfo versionInfo) throws Exception {
+    private static void downloadLibraries(VersionInfo versionInfo, Downloader downloader) throws Exception {
+        List<Downloader.Task> tasks = new ArrayList<>();
         for (VersionInfo.Library library : versionInfo.libraries) {
             if (!library.shouldDownload(OS_TYPE))
                 continue;
 
-            Request request = new Request.Builder()
-                    .url(library.downloads.artifact.url)
-                    .build();
-
-            try (Response response = client.newCall(request).execute()) {
-                if (!response.isSuccessful() || response.body() == null)
-                    throw new IOException("An error occured while trying to download library " + library.name);
-
-                downloadingFile = "libraries/" + library.downloads.artifact.path + " size: " + library.downloads.artifact.size;
-                Path path = Path.of(Settings.getHomePath(), "libraries", library.downloads.artifact.path);
-                path.getParent().toFile().mkdirs();
-                Files.write(path, response.body().bytes(), StandardOpenOption.CREATE);
-            }
+            tasks.add(downloader.taskFrom(
+                    new URL(library.downloads.artifact.url),
+                    Path.of(Settings.getHomePath(), "libraries", library.downloads.artifact.path)
+            ));
         }
+
+        downloader.downloadAll(tasks,  new CallbackPrint());
     }
 
     private static AssetsInfo downloadAssetsInfo(VersionInfo versionInfo) throws Exception {
@@ -118,30 +105,26 @@ public class MinecraftApi {
         }
     }
 
-    private static void downloadAssets(AssetsInfo assetsInfo) throws Exception {
+    private static void downloadAssets(AssetsInfo assetsInfo, Downloader downloader) throws Exception {
+        List<Downloader.Task> tasks = new ArrayList<>();
+
         for (AssetsInfo.AssetsEntry entry : assetsInfo.objects.values()) {
-            Request request = new Request.Builder()
-                    .url(DOWNLOAD_URL + entry.hash.substring(0, 2) + "/" + entry.hash)
-                    .build();
-
-            try (Response response = client.newCall(request).execute()) {
-                if (!response.isSuccessful() || response.body() == null)
-                    throw new IOException("An error occured while trying to download assets " + entry.hash);
-
-                downloadingFile = "assets/objects/" + entry.hash.substring(0, 2) + "/" + entry.hash;
-                Path path = Path.of(Settings.getHomePath(), "assets", "objects", entry.hash.substring(0, 2), entry.hash);
-                path.getParent().toFile().mkdirs();
-                Files.write(path, response.body().bytes(), StandardOpenOption.CREATE);
-            }
+            tasks.add(downloader.taskFrom(
+                    new URL(DOWNLOAD_URL + entry.hash.substring(0, 2) + "/" + entry.hash),
+                    Path.of(Settings.getHomePath(), "assets", "objects", entry.hash.substring(0, 2), entry.hash)
+            ));
         }
+
+        downloader.downloadAll(tasks, new CallbackPrint());
     }
 
     public static VersionInfo download() throws Exception {
         VersionInfo versionInfo = getVersionInfo();
-        downloadClientJar(versionInfo);
-        downloadLibraries(versionInfo);
+        Downloader downloader = new Downloader();
+        downloadClientJar(versionInfo, downloader);
+        downloadLibraries(versionInfo, downloader);
         AssetsInfo assetsInfo = downloadAssetsInfo(versionInfo);
-        downloadAssets(assetsInfo);
+        downloadAssets(assetsInfo, downloader);
 
         return versionInfo;
     }
