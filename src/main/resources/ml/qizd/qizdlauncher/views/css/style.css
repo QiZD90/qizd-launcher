@@ -1,0 +1,9 @@
+.root {
+    -fx-background-image: url("https://images.wallpapersden.com/image/download/landscape-pixel-art_bGhnaGeUmZqaraWkpJRraWWtaW1l.jpg");
+}
+
+.splash {
+    -fx-background-color: white;
+    -fx-background-radius: 10;
+    -fx-effect: dropshadow(one-pass-box, white, 10, 0.5, 0, 0);
+}
