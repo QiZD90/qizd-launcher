@@ -6,12 +6,10 @@ import ml.qizd.qizdlauncher.Settings;
 import ml.qizd.qizdlauncher.models.AssetsInfo;
 import ml.qizd.qizdlauncher.models.VersionInfo;
 import ml.qizd.qizdlauncher.models.VersionManifest;
-import ml.qizd.qizdlauncher.models.VersionManifestEntry;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -22,7 +20,6 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
 public class MinecraftApi {
@@ -45,7 +42,7 @@ public class MinecraftApi {
                 throw new IOException("An error occurred while trying to get version manifest");
 
             VersionManifest manifest = gson.fromJson(response.body().charStream(), VersionManifest.class);
-            for (VersionManifestEntry version : manifest.versions) {
+            for (VersionManifest.Entry version : manifest.versions) {
                 if (version.id.equals(MINECRAFT_VERSION))
                     return version.url;
             }

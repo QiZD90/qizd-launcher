@@ -38,6 +38,11 @@ import java.net.URL;
 import java.util.ResourceBundle;
 
 public class MainController implements Initializable {
+    private static class Box<T> {
+        public T value;
+        public Box(T t) { this.value = t; }
+    }
+
     @FXML
     private Label title_label;
     @FXML
@@ -83,6 +88,9 @@ public class MainController implements Initializable {
 
     public void updateUsers() {
         this.user_profiles_choicebox.setItems(FXCollections.observableArrayList(UserProfiles.getProfiles()));
+        if (UserProfiles.getSelected() != null && this.user_profiles_choicebox.getItems().contains(UserProfiles.getSelected())) {
+            this.user_profiles_choicebox.setValue(UserProfiles.getSelected());
+        }
     }
 
     public void download() {
@@ -91,19 +99,19 @@ public class MainController implements Initializable {
         progress_label.setText(formatProgressText(0, 0));
         buttonSetEnabled(false);
 
-        final int[] filesToDownload = {2}; // client.jar and authlib
-        final int[] filesDownloaded = {0};
+        final Box<Integer> filesToDownload = new Box<>(2); // client.jar and authlib
+        final Box<Integer> filesDownloaded = new Box<>(0);
 
         try {
             VersionInfo versionInfo = MinecraftApi.getVersionInfo();
             AssetsInfo assetsInfo = MinecraftApi.downloadAssetsInfo(versionInfo);
             FabricMeta meta = FabricApi.downloadMeta();
-            filesToDownload[0] +=
+            filesToDownload.value +=
                     versionInfo.getNumberOfLibrariesToDownload()
                             + assetsInfo.getNumberOfAssetsToDownload()
                             + meta.getNumberOfLibrariesToDownload();
 
-            progress_label.setText(formatProgressText(filesDownloaded[0], filesToDownload[0]));
+            progress_label.setText(formatProgressText(filesDownloaded.value, filesToDownload.value));
 
             Task<Void> task = new Task<Void>() {
                 @Override
@@ -113,16 +121,16 @@ public class MainController implements Initializable {
                         public void onProgress(Downloader.Task.Result result) {
                             System.out.printf("DOWNLOAD %s\n", result.filePath);
 
-                            filesDownloaded[0] += 1;
-                            progress_bar.setProgress((double) filesDownloaded[0] / filesToDownload[0]);
-                            updateMessage(formatProgressText(filesDownloaded[0], filesToDownload[0]));
+                            filesDownloaded.value += 1;
+                            progress_bar.setProgress((double) filesDownloaded.value / filesToDownload.value);
+                            updateMessage(formatProgressText(filesDownloaded.value, filesToDownload.value));
                             Platform.runLater(() -> progress_label.setText(getMessage()));
-                            System.out.println((double) filesDownloaded[0] / filesToDownload[0]);
+                            System.out.println((double) filesDownloaded.value / filesToDownload.value);
                         }
 
                         @Override
                         public void onCompleted() {
-                            if (filesDownloaded[0] != filesToDownload[0])
+                            if (filesDownloaded.value.equals(filesToDownload.value))
                                 return;
 
                             progress_bar.setVisible(false);
@@ -186,6 +194,10 @@ public class MainController implements Initializable {
         title_label.setText(TitleTexts.getRandom());
         updateUsers();
         user_profiles_choicebox.setValue(UserProfiles.getSelected());
+        user_profiles_choicebox.setOnAction((x) -> {
+            if (user_profiles_choicebox.getValue() != null) // I don't know why this event keeps triggering when adding a new user
+                UserProfiles.select(user_profiles_choicebox.getValue());
+        });
 
         launch_button.setOnAction((x) -> { launchMinecraft(); });
         minecraft_button.setOnAction((x) -> { download(); });

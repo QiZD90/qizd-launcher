@@ -6,7 +6,12 @@ public class VersionManifest {
         public String snapshot;
     }
 
+    public static class Entry {
+        public String id;
+        public String url;
+    }
+
     public LatestVersions latest;
 
-    public VersionManifestEntry[] versions;
+    public Entry[] versions;
 }

@@ -33,7 +33,7 @@ public class Downloader {
             try (Response response = client.newCall(request).execute()) {
                 ResponseBody body;
                 if (!response.isSuccessful() || (body = response.body()) == null)
-                    return new Result(this.filePath.toString());
+                    throw new IOException("Failed to download " + filePath.toString());
 
                 filePath.getParent().toFile().mkdirs();
                 try (OutputStream stream = Files.newOutputStream(filePath)){
@@ -62,6 +62,7 @@ public class Downloader {
     }
 
     public static class Builder {
+        int threads = 1;
         Callback callback;
         FailBehavior failBehavior = FailBehavior.CANCEL;
 
@@ -70,9 +71,15 @@ public class Downloader {
             return this;
         }
 
+        public Builder threads(int threads) {
+            this.threads = threads;
+            return this;
+        }
+
         public static Builder create(Callback callback) {
             Builder builder = new Builder();
             builder.callback = callback;
+
             return builder;
         }
 
@@ -80,6 +87,7 @@ public class Downloader {
             Downloader downloader = new Downloader();
             downloader.callback = callback;
             downloader.failBehavior = failBehavior;
+            downloader.threadPool = Executors.newFixedThreadPool(threads);
 
             return downloader;
         }
@@ -87,8 +95,8 @@ public class Downloader {
         private Builder() {}
     }
 
-    private ExecutorService threadPool = Executors.newFixedThreadPool(1);
-    private OkHttpClient client = new OkHttpClient();
+    protected ExecutorService threadPool;
+    private final OkHttpClient client = new OkHttpClient();
     protected Callback callback;
     protected FailBehavior failBehavior = FailBehavior.CANCEL;
 
