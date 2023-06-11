@@ -4,52 +4,44 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
-import org.jetbrains.annotations.Nullable;
 
-import java.io.BufferedWriter;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
+import java.util.function.Supplier;
 
 public class Downloader {
     public class Task implements Callable<Task.Result> {
         public static class Result {
-            public enum Status {
-                OK, NOT_OK
-            }
-            String filePath;
-            Status status;
-            public Result(String filePath, Status status) {
+            public String filePath;
+            public Result(String filePath) {
                 this.filePath = filePath;
-                this.status = status;
             }
         }
 
         Request request;
         Path filePath;
 
-        @Override
-        public Result call() {
+        public Result call() throws IOException {
             try (Response response = client.newCall(request).execute()) {
                 ResponseBody body;
                 if (!response.isSuccessful() || (body = response.body()) == null)
-                    return new Result(this.filePath.toString(), Result.Status.NOT_OK);
+                    return new Result(this.filePath.toString());
 
                 filePath.getParent().toFile().mkdirs();
                 try (OutputStream stream = Files.newOutputStream(filePath)){
                     body.byteStream().transferTo(stream);
                 }
-            } catch (Exception e) {
-                return new Result(this.filePath.toString(), Result.Status.NOT_OK);
-            }
 
-            return new Result(this.filePath.toString(), Result.Status.OK);
+                return new Result(filePath.toString());
+            }
         }
 
         private Task(URL url, Path filePath) {
@@ -61,39 +53,80 @@ public class Downloader {
     public static abstract class Callback {
         public abstract void onProgress(Task.Result result);
         public abstract void onCompleted();
+        public abstract void onFailed();
     }
 
-    private ExecutorService threadPool = Executors.newFixedThreadPool(10);
+    public enum FailBehavior { // TODO: implement
+        CANCEL, // Cancels the rest of the downloads on first error
+        IGNORE // Reports the error and continues the download
+    }
+
+    public static class Builder {
+        Callback callback;
+        FailBehavior failBehavior = FailBehavior.CANCEL;
+
+        public Builder failBehavior(FailBehavior failBehavior) {
+            this.failBehavior = failBehavior;
+            return this;
+        }
+
+        public static Builder create(Callback callback) {
+            Builder builder = new Builder();
+            builder.callback = callback;
+            return builder;
+        }
+
+        public Downloader build() {
+            Downloader downloader = new Downloader();
+            downloader.callback = callback;
+            downloader.failBehavior = failBehavior;
+
+            return downloader;
+        }
+
+        private Builder() {}
+    }
+
+    private ExecutorService threadPool = Executors.newFixedThreadPool(1);
     private OkHttpClient client = new OkHttpClient();
+    protected Callback callback;
+    protected FailBehavior failBehavior = FailBehavior.CANCEL;
 
-    public void download(Downloader.Task task, @Nullable Downloader.Callback callback) {
+    public void download(Downloader.Task task) {
+        Future<Task.Result> future = threadPool.submit(task);
         try {
-            threadPool.submit(task).get();
-            if (callback != null) {
-                callback.onCompleted();
-            }
+            callback.onProgress(future.get());
+            callback.onCompleted();
         } catch (Exception e) {
-            e.printStackTrace();
+            callback.onFailed();
         }
     }
 
-    public void downloadAll(List<Downloader.Task> tasks, @Nullable Downloader.Callback callback) {
-        try {
-            List<Future<Task.Result>> futures = threadPool.invokeAll(tasks);
-            for (Future<Task.Result> future : futures) {
-                Task.Result result = future.get();
-                if (callback != null)
-                    callback.onProgress(result);
-            }
+    public void downloadAll(List<Downloader.Task> tasks) {
+        List<Future<Task.Result>> futures = new ArrayList<>(tasks.stream().map((t) -> threadPool.submit(t)).toList());
 
-            if (callback != null)
-                callback.onCompleted();
-        } catch (Exception e) {
-            e.printStackTrace();
+        while (!futures.isEmpty()) {
+            Iterator<Future<Task.Result>> it = futures.iterator();
+            while (it.hasNext()) {
+                Future<Task.Result> future = it.next();
+                if (!future.isDone())
+                    continue;
+
+                try {
+                    callback.onProgress(future.get());
+                    it.remove();
+                } catch (Exception e) {
+                    callback.onFailed();
+                    e.printStackTrace();
+                }
+            }
         }
     }
+
 
     public Task taskFrom(URL url, Path path) {
         return new Task(url, path);
     }
+
+    private Downloader() {}
 }

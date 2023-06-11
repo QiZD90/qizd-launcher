@@ -1,7 +1,6 @@
 package ml.qizd.qizdlauncher.apis;
 
 import com.google.gson.Gson;
-import ml.qizd.qizdlauncher.CallbackPrint;
 import ml.qizd.qizdlauncher.Downloader;
 import ml.qizd.qizdlauncher.Settings;
 import ml.qizd.qizdlauncher.models.AssetsInfo;
@@ -14,13 +13,17 @@ import okhttp3.Response;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Stream;
 
 public class MinecraftApi {
     public static final String OS_TYPE = "windows"; // TODO: refactor
@@ -64,15 +67,16 @@ public class MinecraftApi {
         }
     }
 
-    private static void downloadClientJar(VersionInfo versionInfo, Downloader downloader) throws Exception {
+    private static List<Downloader.Task> downloadClientJarTasks(VersionInfo versionInfo, Downloader downloader) throws MalformedURLException {
         Downloader.Task task = downloader.taskFrom(
                 new URL(versionInfo.downloads.client.url),
                 Path.of(Settings.getHomePath(), "client.jar")
         );
-        downloader.download(task, new CallbackPrint());
+
+        return List.of(task);
     }
 
-    private static void downloadLibraries(VersionInfo versionInfo, Downloader downloader) throws Exception {
+    private static List<Downloader.Task> downloadLibrariesTasks(VersionInfo versionInfo, Downloader downloader) throws MalformedURLException {
         List<Downloader.Task> tasks = new ArrayList<>();
         for (VersionInfo.Library library : versionInfo.libraries) {
             if (!library.shouldDownload(OS_TYPE))
@@ -84,10 +88,10 @@ public class MinecraftApi {
             ));
         }
 
-        downloader.downloadAll(tasks,  new CallbackPrint());
+        return tasks;
     }
 
-    private static AssetsInfo downloadAssetsInfo(VersionInfo versionInfo) throws Exception {
+    public static AssetsInfo downloadAssetsInfo(VersionInfo versionInfo) throws Exception {
         Request request = new Request.Builder()
                 .url(versionInfo.assetIndex.url)
                 .build();
@@ -105,7 +109,7 @@ public class MinecraftApi {
         }
     }
 
-    private static void downloadAssets(AssetsInfo assetsInfo, Downloader downloader) throws Exception {
+    private static List<Downloader.Task> downloadAssetsTasks(AssetsInfo assetsInfo, Downloader downloader) throws MalformedURLException {
         List<Downloader.Task> tasks = new ArrayList<>();
 
         for (AssetsInfo.AssetsEntry entry : assetsInfo.objects.values()) {
@@ -115,17 +119,20 @@ public class MinecraftApi {
             ));
         }
 
-        downloader.downloadAll(tasks, new CallbackPrint());
+        return tasks;
     }
 
-    public static VersionInfo download() throws Exception {
-        VersionInfo versionInfo = getVersionInfo();
-        Downloader downloader = new Downloader();
-        downloadClientJar(versionInfo, downloader);
-        downloadLibraries(versionInfo, downloader);
-        AssetsInfo assetsInfo = downloadAssetsInfo(versionInfo);
-        downloadAssets(assetsInfo, downloader);
-
-        return versionInfo;
+    public static void downloadFromVersionInfo(VersionInfo versionInfo, Downloader downloader) {
+        AssetsInfo assetsInfo;
+        try {
+            assetsInfo = downloadAssetsInfo(versionInfo);
+            downloader.downloadAll(Stream.of(
+                    downloadClientJarTasks(versionInfo, downloader),
+                    downloadLibrariesTasks(versionInfo, downloader),
+                    downloadAssetsTasks(assetsInfo, downloader)
+            ).flatMap(Collection::stream).toList());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

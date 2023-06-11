@@ -1,7 +1,6 @@
 package ml.qizd.qizdlauncher.apis;
 
 import com.google.gson.Gson;
-import ml.qizd.qizdlauncher.CallbackPrint;
 import ml.qizd.qizdlauncher.Downloader;
 import ml.qizd.qizdlauncher.Settings;
 import ml.qizd.qizdlauncher.models.FabricMeta;
@@ -15,6 +14,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 public class FabricApi {
     private static String API_URL = "https://meta.fabricmc.net";
@@ -22,7 +22,7 @@ public class FabricApi {
     private static Gson gson = new Gson();
     private static OkHttpClient client = new OkHttpClient();
 
-    private static FabricMeta downloadMeta() throws IOException {
+    public static FabricMeta downloadMeta() throws IOException {
         Request request = new Request.Builder()
                 .url(API_URL + "/v2/versions/loader/%s/%s/profile/json".formatted(MinecraftApi.MINECRAFT_VERSION, LOADER_VERSION))
                 .build();
@@ -43,14 +43,10 @@ public class FabricApi {
             ));
         }
 
-        downloader.downloadAll(tasks, new CallbackPrint());
+        downloader.downloadAll(tasks);
     }
 
-    public static FabricMeta download() throws IOException {
-        Downloader downloader = new Downloader();
-        FabricMeta meta = downloadMeta();
+    public static void downloadFromMeta(FabricMeta meta, Downloader downloader) throws IOException {
         downloadLibraries(meta, downloader);
-
-        return meta;
     }
 }

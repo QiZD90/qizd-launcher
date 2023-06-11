@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<TabPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" tabClosingPolicy="UNAVAILABLE" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1">
+  <tabs>
+    <Tab text="Настройки">
+      <Pane>
+            <children>
+               <HBox layoutX="14.0" layoutY="14.0" prefHeight="100.0" prefWidth="600.0">
+                  <children>
+                     <Label prefHeight="26.0" prefWidth="121.0" text="Домашняя папка:" />
+                     <Label fx:id="home_path_label" prefHeight="26.0" prefWidth="167.0" text="C:/launcher/" />
+                     <Button fx:id="select_home_path_button" mnemonicParsing="false" text="..." />
+                  </children>
+               </HBox>
+            </children>
+      </Pane>
+    </Tab>
+    <Tab text="Новый аккаунт без регистрации">
+      <Pane>
+            <children>
+               <TextField fx:id="no_auth_nickname_textfield" layoutX="14.0" layoutY="14.0" promptText="Ник" />
+               <Button fx:id="no_auth_add_button" layoutX="54.0" layoutY="47.0" mnemonicParsing="false" text="Добавить" />
+            </children></Pane>
+    </Tab>
+    <Tab text="Новый аккаунт ely.by">
+      <Pane>
+            <children>
+               <TextField fx:id="ely_by_login_textfield" layoutX="14.0" layoutY="14.0" promptText="Логин" />
+               <PasswordField fx:id="ely_by_password_textfield" layoutX="14.0" layoutY="46.0" promptText="Пароль" />
+               <Button fx:id="ely_by_sign_in_button" layoutX="36.0" layoutY="79.0" mnemonicParsing="false" text="Войти в аккаунт" />
+            </children></Pane>
+    </Tab>
+  </tabs>
+</TabPane>

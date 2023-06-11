@@ -14,4 +14,6 @@ module ml.qizd.qizdlauncher {
     opens ml.qizd.qizdlauncher.apis to javafx.fxml;
     exports ml.qizd.qizdlauncher.users;
     opens ml.qizd.qizdlauncher.users to javafx.fxml;
+    exports ml.qizd.qizdlauncher.controllers;
+    opens ml.qizd.qizdlauncher.controllers to javafx.fxml;
 }

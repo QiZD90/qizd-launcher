@@ -1,5 +1,7 @@
 package ml.qizd.qizdlauncher.models;
 
+import ml.qizd.qizdlauncher.apis.MinecraftApi;
+
 public class VersionInfo {
     public static class AssetIndex {
         public String id;
@@ -51,6 +53,16 @@ public class VersionInfo {
 
             return rules[0].action.equals("allow") && rules[0].os.name.equals(os);
         }
+    }
+
+    public int getNumberOfLibrariesToDownload() {
+        int number = 0;
+        for (Library library : libraries) {
+            if (library.shouldDownload(MinecraftApi.OS_TYPE))
+                number++;
+        }
+
+        return number;
     }
 
     public AssetIndex assetIndex;

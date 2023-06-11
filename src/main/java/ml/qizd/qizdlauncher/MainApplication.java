@@ -13,9 +13,11 @@ import java.nio.file.Path;
 public class MainApplication extends Application {
     @Override
     public void start(Stage stage) throws IOException {
+        Settings.read();
+
         FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("views/main-view.fxml"));
         Scene scene = new Scene(fxmlLoader.load(), 640, 480);
-        stage.setTitle("QiZD Launcher | " + TitleTexts.getRandom());
+        stage.setTitle("QiZD Launcher");
         stage.setResizable(false);
         stage.setScene(scene);
         stage.show();

@@ -15,7 +15,7 @@ import java.util.prefs.*;
 
 public class Settings {
     private static final Preferences prefs = Preferences.userNodeForPackage(Settings.class);
-    private static List<UserProfile> profiles;
+    private static List<UserProfile> profiles = new ArrayList<>();
     @Nullable
     private static CommandLineArguments arguments;
 
@@ -58,10 +58,6 @@ public class Settings {
 
     public static void read() {
         Path userProfiles = Path.of(getHomePath(), "profiles.bin");
-        if (!Files.exists(userProfiles)) {
-            profiles = new ArrayList<>();
-            return;
-        }
 
         try (FileReader reader = new FileReader(userProfiles.toFile())) {
             profiles = UserProfileParser.parse(reader);

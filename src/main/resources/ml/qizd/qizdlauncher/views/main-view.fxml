@@ -2,16 +2,41 @@
 
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
 
-<Pane fx:id="root" maxHeight="480.0" maxWidth="640.0" minHeight="480.0" minWidth="640.0" prefHeight="480.0" prefWidth="640.0" stylesheets="@css/style.css" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ml.qizd.qizdlauncher.MainController">
+<Pane fx:id="root" maxHeight="480.0" maxWidth="640.0" minHeight="480.0" minWidth="640.0" prefHeight="480.0" prefWidth="640.0" stylesheets="@css/style.css" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ml.qizd.qizdlauncher.controllers.MainController">
    <children>
       <Pane fx:id="splash" layoutX="170.0" layoutY="140.0" prefHeight="200.0" prefWidth="300.0" styleClass="splash">
          <children>
+            <Label alignment="CENTER" layoutY="14.0" prefHeight="38.0" prefWidth="300.0" text="QiZD's Launcher" textAlignment="CENTER" textFill="#8c6ed2">
+               <font>
+                  <Font name="Berlin Sans FB Demi Bold" size="32.0" />
+               </font>
+            </Label>
+            <Label fx:id="title_label" alignment="CENTER" layoutY="52.0" prefHeight="17.0" prefWidth="300.0" text="Example title text" textAlignment="CENTER" textFill="#8c6ed2">
+               <font>
+                  <Font name="Berlin Sans FB" size="15.0" />
+               </font>
+            </Label>
             <Button fx:id="launch_button" layoutX="64.0" layoutY="128.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="172.0" text="Запустить" />
-            <Button layoutX="64.0" layoutY="161.0" mnemonicParsing="false" text="Button" />
-            <Button layoutX="124.0" layoutY="161.0" mnemonicParsing="false" text="Button" />
-            <Button layoutX="184.0" layoutY="161.0" mnemonicParsing="false" text="Button" />
+            <Button fx:id="minecraft_button" layoutX="64.0" layoutY="161.0" mnemonicParsing="false" prefWidth="51.625" text="MC">
+               <tooltip>
+                  <Tooltip text="Скачать MineCraft и Fabric" />
+               </tooltip>
+            </Button>
+            <Button fx:id="modpack_button" layoutX="124.0" layoutY="161.0" mnemonicParsing="false" prefWidth="51.625" text="MOD">
+               <tooltip>
+                  <Tooltip text="Скачать модпак" />
+               </tooltip>
+            </Button>
+            <Button fx:id="settings_button" layoutX="184.0" layoutY="161.0" mnemonicParsing="false" prefWidth="51.625" text="SET">
+               <tooltip>
+                  <Tooltip text="Настройки" />
+               </tooltip>
+            </Button>
+            <ChoiceBox fx:id="user_profiles_choicebox" layoutX="64.0" layoutY="88.0" prefHeight="25.0" prefWidth="172.0" />
          </children></Pane>
-      <ProgressBar layoutY="466.0" prefHeight="18.0" prefWidth="640.0" progress="0.0" visible="false" />
+      <ProgressBar fx:id="progress_bar" layoutY="466.0" prefHeight="18.0" prefWidth="640.0" progress="0.0" styleClass="progress-bar" visible="false" />
+      <Label fx:id="progress_label" alignment="CENTER" layoutY="466.0" prefHeight="17.0" prefWidth="640.0" text="1310 / 10494" textAlignment="CENTER" visible="false" />
    </children>
 </Pane>

@@ -7,3 +7,14 @@
     -fx-background-radius: 10;
     -fx-effect: dropshadow(one-pass-box, white, 10, 0.5, 0, 0);
 }
+
+.progress-bar .bar {
+    -fx-background-radius: 0;
+}
+.progress-bar .track {
+    -fx-background-radius: 0;
+}
+
+.progress-bar {
+    -fx-background-radius: 0;
+}

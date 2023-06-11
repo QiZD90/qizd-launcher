@@ -8,5 +8,9 @@ public class AssetsInfo {
         public Integer size;
     }
 
+    public int getNumberOfAssetsToDownload() {
+        return objects.size();
+    }
+
     public Map<String, AssetsEntry> objects;
 }
