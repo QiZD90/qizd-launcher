@@ -29,6 +29,7 @@ import ml.qizd.qizdlauncher.models.VersionInfo;
 import ml.qizd.qizdlauncher.users.ElyByUserProfile;
 import ml.qizd.qizdlauncher.users.NoAuthUserProfile;
 import ml.qizd.qizdlauncher.users.UserProfile;
+import ml.qizd.qizdlauncher.users.UserProfiles;
 
 import java.io.File;
 import java.io.IOException;
@@ -81,7 +82,7 @@ public class MainController implements Initializable {
     }
 
     public void updateUsers() {
-        this.user_profiles_choicebox.setItems(FXCollections.observableArrayList(Settings.getUserProfiles()));
+        this.user_profiles_choicebox.setItems(FXCollections.observableArrayList(UserProfiles.getProfiles()));
     }
 
     public void download() {
@@ -183,7 +184,8 @@ public class MainController implements Initializable {
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         title_label.setText(TitleTexts.getRandom());
-        user_profiles_choicebox.setItems(FXCollections.observableArrayList(Settings.getUserProfiles()));
+        updateUsers();
+        user_profiles_choicebox.setValue(UserProfiles.getSelected());
 
         launch_button.setOnAction((x) -> { launchMinecraft(); });
         minecraft_button.setOnAction((x) -> { download(); });

@@ -8,6 +8,7 @@ import ml.qizd.qizdlauncher.Settings;
 import ml.qizd.qizdlauncher.apis.ElyByApi;
 import ml.qizd.qizdlauncher.users.ElyByUserProfile;
 import ml.qizd.qizdlauncher.users.NoAuthUserProfile;
+import ml.qizd.qizdlauncher.users.UserProfiles;
 
 import java.io.File;
 import java.net.URL;
@@ -60,7 +61,7 @@ public class SettingsController implements Initializable {
             if (no_auth_nickname_textfield.getText().isEmpty())
                 return;
 
-            Settings.addUserProfile(new NoAuthUserProfile(no_auth_nickname_textfield.getText()));
+            UserProfiles.addUserProfile(new NoAuthUserProfile(no_auth_nickname_textfield.getText()));
             showInformation("Пользователь успешно добавлен");
             no_auth_nickname_textfield.setText("");
             parent.updateUsers();
@@ -71,7 +72,7 @@ public class SettingsController implements Initializable {
                 return;
 
             try {
-                Settings.addUserProfile(ElyByApi.auth(ely_by_login_textfield.getText(), ely_by_password_textfield.getText()));
+                UserProfiles.addUserProfile(ElyByApi.auth(ely_by_login_textfield.getText(), ely_by_password_textfield.getText()));
                 showInformation("Пользователь успешно добавлен");
                 ely_by_login_textfield.setText("");
                 ely_by_password_textfield.setText("");

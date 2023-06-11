@@ -74,7 +74,13 @@ public class CommandLineArguments implements Serializable {
             sb.append(" ");
         }
 
-        sb.append(profile.getAuthArgs());
+        sb.append("--accessToken ");
+        sb.append(profile.getAccessToken());
+        sb.append(" --username ");
+        sb.append(profile.getName());
+        sb.append(" --uuid ");
+        sb.append(profile.getUUID());
+        sb.append(" --userType legacy");
 
         return sb.toString();
     }

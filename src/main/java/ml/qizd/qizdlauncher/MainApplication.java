@@ -6,6 +6,7 @@ import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.scene.layout.BackgroundImage;
 import javafx.stage.Stage;
+import ml.qizd.qizdlauncher.users.UserProfiles;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -13,7 +14,12 @@ import java.nio.file.Path;
 public class MainApplication extends Application {
     @Override
     public void start(Stage stage) throws IOException {
-        Settings.read();
+        try {
+            Settings.read();
+            UserProfiles.read();
+        } catch (IOException e) {
+            System.out.println("Couldn't load settings and/or user profiles");
+        }
 
         FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("views/main-view.fxml"));
         Scene scene = new Scene(fxmlLoader.load(), 640, 480);
@@ -24,8 +30,9 @@ public class MainApplication extends Application {
     }
 
     @Override
-    public void stop() {
+    public void stop() throws IOException {
         Settings.write();
+        UserProfiles.write();
     }
 
     public static void main(String[] args) {

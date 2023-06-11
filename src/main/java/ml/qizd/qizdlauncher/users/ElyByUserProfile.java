@@ -13,30 +13,14 @@ public class ElyByUserProfile implements UserProfile {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public String getAccessToken() {
         return accessToken;
     };
-
-    public void setAccessToken(String accessToken) {
-        this.accessToken = accessToken;
-    }
 
     public String getUUID() {
         return UUID;
     }
 
-    public void setUUID(String UUID) {
-        this.UUID = UUID;
-    }
-
-    @Override
-    public String getAuthArgs() {
-        return "--accessToken %s --username %s --uuid %s --userType legacy".formatted(accessToken, name, UUID);
-    }
 
     public String toString() {
         return "[ELY.BY] %s".formatted(getName());
