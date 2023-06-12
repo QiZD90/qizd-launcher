@@ -2,6 +2,8 @@ package ml.qizd.qizdlauncher.users;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import ml.qizd.qizdlauncher.Settings;
 import ml.qizd.qizdlauncher.models.UserProfilesModel;
 import org.jetbrains.annotations.NotNull;
@@ -15,8 +17,8 @@ import java.util.List;
 import java.util.ListIterator;
 
 public class UserProfiles {
-    private static Gson gson = new GsonBuilder().setPrettyPrinting().create();
-    private static List<UserProfile> profiles = new ArrayList<>();
+    private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
+    private static final ObservableList<UserProfile> profiles = FXCollections.observableArrayList();
     @Nullable
     private static String selectedUUID = "";
 
@@ -33,7 +35,7 @@ public class UserProfiles {
         return null;
     }
 
-    public static List<UserProfile> getProfiles() {
+    public static ObservableList<UserProfile> getProfiles() {
         return profiles;
     }
 
@@ -42,6 +44,15 @@ public class UserProfiles {
             select(profile);
 
         profiles.add(profile);
+        try {
+            write();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void removeUser(@NotNull UserProfile profile) {
+        profiles.remove(profile);
         try {
             write();
         } catch (IOException e) {

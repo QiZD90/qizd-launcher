@@ -3,13 +3,10 @@ package ml.qizd.qizdlauncher;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
-import javafx.scene.image.Image;
-import javafx.scene.layout.BackgroundImage;
 import javafx.stage.Stage;
 import ml.qizd.qizdlauncher.users.UserProfiles;
 
 import java.io.IOException;
-import java.nio.file.Path;
 
 public class MainApplication extends Application {
     @Override

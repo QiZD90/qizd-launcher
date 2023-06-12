@@ -1,15 +1,10 @@
 package ml.qizd.qizdlauncher;
 
-import ml.qizd.qizdlauncher.users.NoAuthUserProfile;
-import ml.qizd.qizdlauncher.users.UserProfile;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.prefs.*;
 
 public class Settings {

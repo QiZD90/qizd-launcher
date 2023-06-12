@@ -1,21 +1,45 @@
 package ml.qizd.qizdlauncher.controllers;
 
+import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
 import javafx.stage.DirectoryChooser;
 import ml.qizd.qizdlauncher.Settings;
 import ml.qizd.qizdlauncher.apis.ElyByApi;
-import ml.qizd.qizdlauncher.users.ElyByUserProfile;
 import ml.qizd.qizdlauncher.users.NoAuthUserProfile;
+import ml.qizd.qizdlauncher.users.UserProfile;
 import ml.qizd.qizdlauncher.users.UserProfiles;
 
 import java.io.File;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.ResourceBundle;
-import java.util.Set;
 
 public class SettingsController implements Initializable {
+    private static class UserProfileListViewEntry extends HBox {
+        UserProfile profile;
+
+        private static UserProfileListViewEntry create(UserProfile profile) {
+            Label label = new Label(profile.toString());
+            label.setAlignment(Pos.CENTER);
+            Button button = new Button("❌");
+            button.setOnAction((e) -> UserProfiles.removeUser(profile));
+
+            return new UserProfileListViewEntry(profile, label, button);
+        }
+
+        private UserProfileListViewEntry(UserProfile profile, Node... nodes) {
+            super(8d, nodes);
+            this.profile = profile;
+        }
+    }
+
     private final MainController parent;
 
     @FXML
@@ -34,9 +58,12 @@ public class SettingsController implements Initializable {
     private TextField ely_by_password_textfield;
     @FXML
     private Button ely_by_sign_in_button;
+    @FXML
+    private Tab accounts_tab;
 
-    private void showError(String e) {
-        Alert alert = new Alert(Alert.AlertType.ERROR, e, ButtonType.OK);
+    private void showExceptionError(Exception e) {
+        e.printStackTrace();
+        Alert alert = new Alert(Alert.AlertType.ERROR, Arrays.toString(e.getStackTrace()), ButtonType.OK);
         alert.show();
     }
 
@@ -47,6 +74,22 @@ public class SettingsController implements Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        ObservableList<UserProfileListViewEntry> entries = FXCollections.observableArrayList(
+                UserProfiles.getProfiles().stream().map(UserProfileListViewEntry::create).toList()
+        );
+        UserProfiles.getProfiles().addListener((ListChangeListener<UserProfile>) c -> {
+            while (c.next()) {
+                if (c.wasAdded()) {
+                    entries.addAll(c.getAddedSubList().stream().map(UserProfileListViewEntry::create).toList());
+                }
+
+                if (c.wasRemoved()) {
+                    entries.removeIf(e -> c.getRemoved().contains(e.profile));
+                }
+            }
+        });
+        accounts_tab.setContent(new ListView<>(entries));
+
         home_path_label.setText(Settings.getHomePath());
         select_home_path_button.setOnAction((e) -> {
             DirectoryChooser chooser = new DirectoryChooser();
@@ -78,7 +121,7 @@ public class SettingsController implements Initializable {
                 ely_by_password_textfield.setText("");
                 parent.updateUsers();
             } catch (Exception ex) {
-                showError(ex.toString());
+                showExceptionError(ex);
                 ely_by_password_textfield.setText("");
             }
         });

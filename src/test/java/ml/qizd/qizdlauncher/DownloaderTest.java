@@ -4,11 +4,7 @@ import ml.qizd.qizdlauncher.apis.FabricApi;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.file.Path;
-import java.util.List;
-import java.util.stream.IntStream;
 
 public class DownloaderTest {
     @Test
@@ -23,7 +19,9 @@ public class DownloaderTest {
             public void onCompleted() {}
 
             @Override
-            public void onFailed() {}
+            public void onFailed() {
+                System.out.println("Failed");
+            }
         };
 
         Downloader downloader1 = Downloader.Builder
@@ -37,19 +35,13 @@ public class DownloaderTest {
                 .threads(10)
                 .build();
 
-
-        //1853771700
-        //903878800
-        //2010077000
-        //924609000
-
         long start = System.nanoTime();
-        FabricApi.downloadFromMeta(FabricApi.downloadMeta(), downloader1);
+        FabricApi.downloadFromMeta(FabricApi.getMeta(), downloader1);
         long elapsedTime = System.nanoTime() - start;
         System.out.println(elapsedTime);
 
         start = System.nanoTime();
-        FabricApi.downloadFromMeta(FabricApi.downloadMeta(), downloader1);
+        FabricApi.downloadFromMeta(FabricApi.getMeta(), downloader2);
         elapsedTime = System.nanoTime() - start;
         System.out.println(elapsedTime);
     }

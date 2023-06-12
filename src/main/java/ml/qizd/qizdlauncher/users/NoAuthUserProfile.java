@@ -25,6 +25,15 @@ public class NoAuthUserProfile implements UserProfile {
         return "[NOAUTH] %s".formatted(getName());
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof NoAuthUserProfile))
+            return false;
+
+        return getUUID().equals(((NoAuthUserProfile) obj).getUUID())
+                && getName().equals(((NoAuthUserProfile) obj).getName());
+    }
+
     public NoAuthUserProfile(String name, String uuid) {
         this.name = name;
         this.uuid = UUID.fromString(uuid);

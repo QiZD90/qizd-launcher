@@ -10,15 +10,23 @@ import java.io.OutputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.function.Supplier;
 
 public class Downloader {
-    public class Task implements Callable<Task.Result> {
+    public class Task implements Callable<Task.Result>, Supplier<Task.Result> {
+        @Override
+        public Result get() {
+            try {
+                return this.call();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
         public static class Result {
             public String filePath;
             public Result(String filePath) {
@@ -30,9 +38,8 @@ public class Downloader {
         Path filePath;
 
         public Result call() throws IOException {
-            try (Response response = client.newCall(request).execute()) {
-                ResponseBody body;
-                if (!response.isSuccessful() || (body = response.body()) == null)
+            try (Response response = client.newCall(request).execute(); ResponseBody body = response.body()) {
+                if (!response.isSuccessful() || body == null)
                     throw new IOException("Failed to download " + filePath.toString());
 
                 filePath.getParent().toFile().mkdirs();
@@ -111,23 +118,22 @@ public class Downloader {
     }
 
     public void downloadAll(List<Downloader.Task> tasks) {
-        List<Future<Task.Result>> futures = new ArrayList<>(tasks.stream().map((t) -> threadPool.submit(t)).toList());
+        CompletableFuture<?>[] futures = new CompletableFuture[tasks.size()];
+        tasks
+                .stream()
+                .map((t) -> CompletableFuture
+                        .supplyAsync(t, threadPool)
+                        .thenAcceptAsync((x) -> callback.onProgress(x))
+                )
+                .toList()
+                .toArray(futures);
 
-        while (!futures.isEmpty()) {
-            Iterator<Future<Task.Result>> it = futures.iterator();
-            while (it.hasNext()) {
-                Future<Task.Result> future = it.next();
-                if (!future.isDone())
-                    continue;
 
-                try {
-                    callback.onProgress(future.get());
-                    it.remove();
-                } catch (Exception e) {
-                    callback.onFailed();
-                    e.printStackTrace();
-                }
-            }
+        try {
+            CompletableFuture.allOf(futures).join();
+            callback.onCompleted();
+        } catch (CompletionException e) {
+            callback.onFailed();
         }
     }
 

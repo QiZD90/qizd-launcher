@@ -31,7 +31,10 @@
                <TextField fx:id="ely_by_login_textfield" layoutX="14.0" layoutY="14.0" promptText="Логин" />
                <PasswordField fx:id="ely_by_password_textfield" layoutX="14.0" layoutY="46.0" promptText="Пароль" />
                <Button fx:id="ely_by_sign_in_button" layoutX="36.0" layoutY="79.0" mnemonicParsing="false" text="Войти в аккаунт" />
-            </children></Pane>
+            </children>
+      </Pane>
+    </Tab>
+    <Tab fx:id="accounts_tab" text="Аккаунты">
     </Tab>
   </tabs>
 </TabPane>

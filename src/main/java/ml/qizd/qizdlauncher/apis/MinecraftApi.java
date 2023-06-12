@@ -9,6 +9,7 @@ import ml.qizd.qizdlauncher.models.VersionManifest;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import okhttp3.ResponseBody;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -18,9 +19,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.stream.Stream;
 
 public class MinecraftApi {
     public static final String OS_TYPE = "windows"; // TODO: refactor
@@ -37,11 +36,11 @@ public class MinecraftApi {
                 .url(VERSION_MANIFEST)
                 .build();
 
-        try (Response response = client.newCall(request).execute()) {
-            if (!response.isSuccessful() || response.body() == null)
+        try (Response response = client.newCall(request).execute(); ResponseBody body = response.body()) {
+            if (!response.isSuccessful() || body == null)
                 throw new IOException("An error occurred while trying to get version manifest");
 
-            VersionManifest manifest = gson.fromJson(response.body().charStream(), VersionManifest.class);
+            VersionManifest manifest = gson.fromJson(body.charStream(), VersionManifest.class);
             for (VersionManifest.Entry version : manifest.versions) {
                 if (version.id.equals(MINECRAFT_VERSION))
                     return version.url;
@@ -56,11 +55,11 @@ public class MinecraftApi {
                 .url(getVersionURL())
                 .build();
 
-        try (Response response = client.newCall(request).execute()) {
-            if (!response.isSuccessful() || response.body() == null)
+        try (Response response = client.newCall(request).execute(); ResponseBody body = response.body()) {
+            if (!response.isSuccessful() || body == null)
                 throw new IOException("An error occured while trying to get version info");
 
-            return gson.fromJson(response.body().charStream(), VersionInfo.class);
+            return gson.fromJson(body.charStream(), VersionInfo.class);
         }
     }
 
@@ -123,11 +122,11 @@ public class MinecraftApi {
         AssetsInfo assetsInfo;
         try {
             assetsInfo = downloadAssetsInfo(versionInfo);
-            downloader.downloadAll(Stream.of(
-                    downloadClientJarTasks(versionInfo, downloader),
-                    downloadLibrariesTasks(versionInfo, downloader),
-                    downloadAssetsTasks(assetsInfo, downloader)
-            ).flatMap(Collection::stream).toList());
+            ArrayList<Downloader.Task> tasks = new ArrayList<>();
+            tasks.addAll(downloadClientJarTasks(versionInfo, downloader));
+            tasks.addAll(downloadLibrariesTasks(versionInfo, downloader));
+            tasks.addAll(downloadAssetsTasks(assetsInfo, downloader));
+            downloader.downloadAll(tasks);
         } catch (Exception e) {
             e.printStackTrace();
         }

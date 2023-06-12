@@ -1,7 +1,5 @@
 package ml.qizd.qizdlauncher.models;
 
-import ml.qizd.qizdlauncher.apis.MinecraftApi;
-
 public class FabricMeta {
     public static class Arguments {
         public String[] game;

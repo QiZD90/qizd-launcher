@@ -1,33 +1,22 @@
 package ml.qizd.qizdlauncher.controllers;
 
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.image.Image;
-import javafx.scene.layout.*;
-import javafx.scene.paint.Paint;
-import javafx.stage.DirectoryChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import javafx.util.Duration;
 import ml.qizd.qizdlauncher.*;
 import ml.qizd.qizdlauncher.apis.AuthLibInjectorDownloader;
-import ml.qizd.qizdlauncher.apis.ElyByApi;
 import ml.qizd.qizdlauncher.apis.FabricApi;
 import ml.qizd.qizdlauncher.apis.MinecraftApi;
 import ml.qizd.qizdlauncher.models.AssetsInfo;
 import ml.qizd.qizdlauncher.models.FabricMeta;
 import ml.qizd.qizdlauncher.models.VersionInfo;
-import ml.qizd.qizdlauncher.users.ElyByUserProfile;
-import ml.qizd.qizdlauncher.users.NoAuthUserProfile;
 import ml.qizd.qizdlauncher.users.UserProfile;
 import ml.qizd.qizdlauncher.users.UserProfiles;
 
@@ -35,6 +24,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.ResourceBundle;
 
 public class MainController implements Initializable {
@@ -62,6 +52,7 @@ public class MainController implements Initializable {
 
     private void showExceptionError(Exception e) {
         // TODO: polish this
+        e.printStackTrace();
         Alert alert = new Alert(
                 Alert.AlertType.ERROR,
                 "An error has occured: " + e.toString(),
@@ -87,7 +78,6 @@ public class MainController implements Initializable {
     }
 
     public void updateUsers() {
-        this.user_profiles_choicebox.setItems(FXCollections.observableArrayList(UserProfiles.getProfiles()));
         if (UserProfiles.getSelected() != null && this.user_profiles_choicebox.getItems().contains(UserProfiles.getSelected())) {
             this.user_profiles_choicebox.setValue(UserProfiles.getSelected());
         }
@@ -105,7 +95,7 @@ public class MainController implements Initializable {
         try {
             VersionInfo versionInfo = MinecraftApi.getVersionInfo();
             AssetsInfo assetsInfo = MinecraftApi.downloadAssetsInfo(versionInfo);
-            FabricMeta meta = FabricApi.downloadMeta();
+            FabricMeta meta = FabricApi.getMeta();
             filesToDownload.value +=
                     versionInfo.getNumberOfLibrariesToDownload()
                             + assetsInfo.getNumberOfAssetsToDownload()
@@ -113,7 +103,7 @@ public class MainController implements Initializable {
 
             progress_label.setText(formatProgressText(filesDownloaded.value, filesToDownload.value));
 
-            Task<Void> task = new Task<Void>() {
+            Task<Void> task = new Task<>() {
                 @Override
                 protected Void call() throws Exception {
                     Downloader.Callback callback = new Downloader.Callback() {
@@ -125,7 +115,6 @@ public class MainController implements Initializable {
                             progress_bar.setProgress((double) filesDownloaded.value / filesToDownload.value);
                             updateMessage(formatProgressText(filesDownloaded.value, filesToDownload.value));
                             Platform.runLater(() -> progress_label.setText(getMessage()));
-                            System.out.println((double) filesDownloaded.value / filesToDownload.value);
                         }
 
                         @Override
@@ -146,7 +135,12 @@ public class MainController implements Initializable {
                         }
                     };
 
-                    Downloader downloader = Downloader.Builder.create(callback).failBehavior(Downloader.FailBehavior.CANCEL).build();
+                    Downloader downloader = Downloader.Builder
+                            .create(callback)
+                            .failBehavior(Downloader.FailBehavior.CANCEL)
+                            .threads(10)
+                            .build();
+
                     MinecraftApi.downloadFromVersionInfo(versionInfo, downloader);
                     FabricApi.downloadFromMeta(meta, downloader);
                     AuthLibInjectorDownloader.download(downloader);
@@ -192,10 +186,10 @@ public class MainController implements Initializable {
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         title_label.setText(TitleTexts.getRandom());
+        user_profiles_choicebox.setItems(UserProfiles.getProfiles());
         updateUsers();
-        user_profiles_choicebox.setValue(UserProfiles.getSelected());
         user_profiles_choicebox.setOnAction((x) -> {
-            if (user_profiles_choicebox.getValue() != null) // I don't know why this event keeps triggering when adding a new user
+            if (user_profiles_choicebox.getValue() != null)
                 UserProfiles.select(user_profiles_choicebox.getValue());
         });
 
