@@ -15,13 +15,26 @@ import java.util.concurrent.*;
 import java.util.function.Supplier;
 
 public class Downloader {
-    public class Task implements Callable<Task.Result>, Supplier<Task.Result> {
+    public class Task implements Supplier<Task.Result> {
         @Override
         public Result get() {
-            try {
-                return this.call();
-            } catch (IOException e) {
-                e.printStackTrace();
+            try (Response response = client.newCall(request).execute(); ResponseBody body = response.body()) {
+                if (!response.isSuccessful() || body == null) {
+                    if (failBehavior.equals(FailBehavior.CANCEL))
+                        throw new Exception("Failed to download " + filePath.toString());
+
+                    return null;
+                }
+
+                filePath.getParent().toFile().mkdirs();
+                try (OutputStream stream = Files.newOutputStream(filePath)){
+                    body.byteStream().transferTo(stream);
+                }
+
+                return new Result(filePath.toString());
+            } catch (Exception e) {
+                if (failBehavior.equals(FailBehavior.CANCEL))
+                    throw new RuntimeException(e);
             }
 
             return null;
@@ -37,20 +50,6 @@ public class Downloader {
         Request request;
         Path filePath;
 
-        public Result call() throws IOException {
-            try (Response response = client.newCall(request).execute(); ResponseBody body = response.body()) {
-                if (!response.isSuccessful() || body == null)
-                    throw new IOException("Failed to download " + filePath.toString());
-
-                filePath.getParent().toFile().mkdirs();
-                try (OutputStream stream = Files.newOutputStream(filePath)){
-                    body.byteStream().transferTo(stream);
-                }
-
-                return new Result(filePath.toString());
-            }
-        }
-
         private Task(URL url, Path filePath) {
             this.request = new Request.Builder().url(url).build();
             this.filePath = filePath;
@@ -64,8 +63,8 @@ public class Downloader {
     }
 
     public enum FailBehavior { // TODO: implement
-        CANCEL, // Cancels the rest of the downloads on first error
-        IGNORE // Reports the error and continues the download
+        CANCEL,
+        IGNORE
     }
 
     public static class Builder {
@@ -94,7 +93,11 @@ public class Downloader {
             Downloader downloader = new Downloader();
             downloader.callback = callback;
             downloader.failBehavior = failBehavior;
-            downloader.threadPool = Executors.newFixedThreadPool(threads);
+            downloader.threadPool = Executors.newFixedThreadPool(threads, (r) -> {
+                Thread t = new Thread(r);
+                t.setDaemon(true);
+                return t;
+            });
 
             return downloader;
         }
@@ -108,7 +111,7 @@ public class Downloader {
     protected FailBehavior failBehavior = FailBehavior.CANCEL;
 
     public void download(Downloader.Task task) {
-        Future<Task.Result> future = threadPool.submit(task);
+        Future<Task.Result> future = CompletableFuture.supplyAsync(task);
         try {
             callback.onProgress(future.get());
             callback.onCompleted();
@@ -132,7 +135,7 @@ public class Downloader {
         try {
             CompletableFuture.allOf(futures).join();
             callback.onCompleted();
-        } catch (CompletionException e) {
+        } catch (Exception e) {
             callback.onFailed();
         }
     }

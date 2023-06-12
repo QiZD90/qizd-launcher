@@ -5,6 +5,8 @@ module ml.qizd.qizdlauncher {
     requires okhttp3;
     requires java.prefs;
     requires org.jetbrains.annotations;
+    requires jdk.crypto.ec;
+    requires jdk.crypto.cryptoki;
 
 
     opens ml.qizd.qizdlauncher to javafx.fxml;

@@ -1,13 +1,17 @@
 package ml.qizd.qizdlauncher.controllers;
 
 import javafx.application.Platform;
-import javafx.collections.FXCollections;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundImage;
+import javafx.scene.layout.Pane;
+import javafx.scene.text.Font;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import ml.qizd.qizdlauncher.*;
@@ -24,7 +28,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.Arrays;
 import java.util.ResourceBundle;
 
 public class MainController implements Initializable {
@@ -34,7 +37,11 @@ public class MainController implements Initializable {
     }
 
     @FXML
+    private Pane root;
+    @FXML
     private Label title_label;
+    @FXML
+    private Label splash_label;
     @FXML
     private ChoiceBox<UserProfile> user_profiles_choicebox;
     @FXML
@@ -151,7 +158,9 @@ public class MainController implements Initializable {
                 }
             };
 
-            new Thread(task).start();
+            Thread t = new Thread(task);
+            t.setDaemon(true);
+            t.start();
         } catch (Exception e) {
             e.printStackTrace();
             showExceptionError(e);
@@ -185,7 +194,12 @@ public class MainController implements Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        title_label.setText(TitleTexts.getRandom());
+        Backgrounds.Background bg = Backgrounds.getRandom();
+        root.setBackground(new Background(new BackgroundImage(bg.image, null, null, null, null)));
+        title_label.setTextFill(bg.color);
+        splash_label.setText(SplashTexts.getRandom());
+        splash_label.setTextFill(bg.color);
+
         user_profiles_choicebox.setItems(UserProfiles.getProfiles());
         updateUsers();
         user_profiles_choicebox.setOnAction((x) -> {
@@ -203,6 +217,9 @@ public class MainController implements Initializable {
                 Scene scene = new Scene(loader.load());
                 stage.setScene(scene);
                 stage.initModality(Modality.APPLICATION_MODAL);
+                stage.setTitle("Настройки");
+                stage.setResizable(false);
+                stage.getIcons().add(new Image(MainApplication.class.getResourceAsStream("images/icon.png")));
                 stage.showAndWait();
             } catch (IOException e) {
                 showExceptionError(e);

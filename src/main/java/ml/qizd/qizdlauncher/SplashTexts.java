@@ -2,7 +2,7 @@ package ml.qizd.qizdlauncher;
 
 import java.util.Random;
 
-public class TitleTexts {
+public class SplashTexts {
     public static String[] texts = new String[] {
             "Now with less cannibalism!",
             "Built by QiZD",
