@@ -10,8 +10,14 @@ import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.stage.DirectoryChooser;
+import javafx.stage.Stage;
+import ml.qizd.qizdlauncher.CommandLineArguments;
 import ml.qizd.qizdlauncher.Settings;
 import ml.qizd.qizdlauncher.apis.ElyByApi;
+import ml.qizd.qizdlauncher.apis.FabricApi;
+import ml.qizd.qizdlauncher.apis.MinecraftApi;
+import ml.qizd.qizdlauncher.models.FabricMeta;
+import ml.qizd.qizdlauncher.models.VersionInfo;
 import ml.qizd.qizdlauncher.users.NoAuthUserProfile;
 import ml.qizd.qizdlauncher.users.UserProfile;
 import ml.qizd.qizdlauncher.users.UserProfiles;
@@ -46,7 +52,8 @@ public class SettingsController implements Initializable {
     private Label home_path_label;
     @FXML
     private Button select_home_path_button;
-
+    @FXML
+    private Button rewrite_arguments_button;
     @FXML
     private TextField no_auth_nickname_textfield;
     @FXML
@@ -64,11 +71,13 @@ public class SettingsController implements Initializable {
     private void showExceptionError(Exception e) {
         e.printStackTrace();
         Alert alert = new Alert(Alert.AlertType.ERROR, Arrays.toString(e.getStackTrace()), ButtonType.OK);
+        ((Stage) alert.getDialogPane().getScene().getWindow()).getIcons().add(parent.icon);
         alert.show();
     }
 
     private void showInformation(String s) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION, s, ButtonType.OK);
+        ((Stage) alert.getDialogPane().getScene().getWindow()).getIcons().add(parent.icon);
         alert.show();
     }
 
@@ -93,11 +102,29 @@ public class SettingsController implements Initializable {
         home_path_label.setText(Settings.getHomePath());
         select_home_path_button.setOnAction((e) -> {
             DirectoryChooser chooser = new DirectoryChooser();
-            chooser.setInitialDirectory(new File(Settings.getHomePath()));
+            File file = new File(Settings.getHomePath());
+            if (file.exists())
+                chooser.setInitialDirectory(file);
             File dir = chooser.showDialog(this.home_path_label.getScene().getWindow());
             Settings.setHomePath(dir.getPath());
 
             home_path_label.setText(Settings.getHomePath());
+        });
+
+        rewrite_arguments_button.setOnAction((e) -> {
+            try {
+                VersionInfo versionInfo = MinecraftApi.getVersionInfo();
+                FabricMeta fabricMeta = FabricApi.getMeta();
+                CommandLineArguments args = CommandLineArguments
+                        .fromVersionInfo(versionInfo)
+                        .patchFabric(fabricMeta)
+                        .patchAuthLib();
+                Settings.setArguments(args);
+            } catch (Exception ex) {
+                showExceptionError(ex);
+            }
+
+            showInformation("Аргументы запуска успешно пересозданы");
         });
 
         no_auth_add_button.setOnAction((e) -> {

@@ -8,13 +8,14 @@
     <Tab text="Настройки">
       <Pane>
             <children>
-               <HBox layoutX="14.0" layoutY="14.0" prefHeight="100.0" prefWidth="600.0">
+               <HBox layoutX="14.0" layoutY="14.0" prefHeight="47.0" prefWidth="573.0">
                   <children>
                      <Label prefHeight="26.0" prefWidth="121.0" text="Домашняя папка:" />
                      <Label fx:id="home_path_label" prefHeight="26.0" prefWidth="167.0" text="C:/launcher/" />
                      <Button fx:id="select_home_path_button" mnemonicParsing="false" text="..." />
                   </children>
                </HBox>
+               <Button fx:id="rewrite_arguments_button" layoutX="14.0" layoutY="61.0" mnemonicParsing="false" text="Пересоздать аргументы запуска" />
             </children>
       </Pane>
     </Tab>

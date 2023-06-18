@@ -11,6 +11,8 @@ public class Settings {
     private static final Preferences prefs = Preferences.userNodeForPackage(Settings.class);
     @Nullable
     private static CommandLineArguments arguments;
+    @Nullable
+    private static String modpackVersion;
 
     public static void setHomePath(String s) {
         prefs.put("HOME_PATH", s);
@@ -30,6 +32,16 @@ public class Settings {
         write();
     }
 
+    @Nullable
+    public static String getModpackVersion() {
+        return modpackVersion;
+    }
+
+    public static void setModpackVersion(String modpackVersion) {
+        Settings.modpackVersion = modpackVersion;
+        write();
+    }
+
     public static void read() throws IOException {
         Path args = Path.of(getHomePath(), "arguments.bin");
         if (Files.exists(args)) {
@@ -37,6 +49,13 @@ public class Settings {
                 setArguments((CommandLineArguments) ois.readObject());
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
+            }
+        }
+
+        Path version = Path.of(getHomePath(), "modpack.version");
+        if (Files.exists(version)) {
+            try (BufferedReader reader = Files.newBufferedReader(version)) {
+                modpackVersion = reader.readLine();
             }
         }
     }
@@ -53,6 +72,18 @@ public class Settings {
             oos.writeObject(getArguments());
         } catch (Exception e) {
             System.out.println(e.getMessage());
+        }
+
+        if (getModpackVersion() != null) {
+            try {
+                Path version = Path.of(getHomePath(), "modpack.version");
+                version.toFile().createNewFile();
+                try (BufferedWriter writer = Files.newBufferedWriter(version)) {
+                    writer.write(getModpackVersion());
+                }
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
+            }
         }
 
         System.out.println("finished writing");

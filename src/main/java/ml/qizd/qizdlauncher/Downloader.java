@@ -59,7 +59,7 @@ public class Downloader {
     public static abstract class Callback {
         public abstract void onProgress(Task.Result result);
         public abstract void onCompleted();
-        public abstract void onFailed();
+        public abstract void onFailed(Exception e);
     }
 
     public enum FailBehavior { // TODO: implement
@@ -116,7 +116,8 @@ public class Downloader {
             callback.onProgress(future.get());
             callback.onCompleted();
         } catch (Exception e) {
-            callback.onFailed();
+            callback.onFailed(e);
+            e.printStackTrace();
         }
     }
 
@@ -136,7 +137,8 @@ public class Downloader {
             CompletableFuture.allOf(futures).join();
             callback.onCompleted();
         } catch (Exception e) {
-            callback.onFailed();
+            callback.onFailed(e);
+            e.printStackTrace();
         }
     }
 

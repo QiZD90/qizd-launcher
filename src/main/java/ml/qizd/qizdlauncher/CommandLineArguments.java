@@ -47,15 +47,15 @@ public class CommandLineArguments implements Serializable {
     }
 
     public CommandLineArguments patchAuthLib() {
-        jvmArguments.add("-javaagent:%s=ely.by".formatted(AuthLibInjectorDownloader.INJECTOR_FILE));
+        jvmArguments.add("-javaagent:%s=ely.by".formatted(Settings.getHomePath() + "\\" + AuthLibInjectorDownloader.INJECTOR_FILE));
 
         return this;
     }
 
     public String format(UserProfile profile) {
-        StringBuilder sb = new StringBuilder("java -cp ");
+        StringBuilder sb = new StringBuilder(Settings.getHomePath() + "\\jre\\bin\\java.exe -cp ");
         for (String classPath: classPaths) {
-            sb.append(classPath);
+            sb.append(Settings.getHomePath() + "\\" + classPath);
             sb.append(";");
         }
         sb.append(Settings.getHomePath() + "/client.jar;");

@@ -1,7 +1,6 @@
 package ml.qizd.qizdlauncher.controllers;
 
 import javafx.application.Platform;
-import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -11,16 +10,14 @@ import javafx.scene.image.Image;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundImage;
 import javafx.scene.layout.Pane;
-import javafx.scene.text.Font;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import ml.qizd.qizdlauncher.*;
 import ml.qizd.qizdlauncher.apis.AuthLibInjectorDownloader;
 import ml.qizd.qizdlauncher.apis.FabricApi;
 import ml.qizd.qizdlauncher.apis.MinecraftApi;
-import ml.qizd.qizdlauncher.models.AssetsInfo;
-import ml.qizd.qizdlauncher.models.FabricMeta;
-import ml.qizd.qizdlauncher.models.VersionInfo;
+import ml.qizd.qizdlauncher.apis.ModpackApi;
+import ml.qizd.qizdlauncher.models.*;
 import ml.qizd.qizdlauncher.users.UserProfile;
 import ml.qizd.qizdlauncher.users.UserProfiles;
 
@@ -28,14 +25,11 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.List;
 import java.util.ResourceBundle;
 
 public class MainController implements Initializable {
-    private static class Box<T> {
-        public T value;
-        public Box(T t) { this.value = t; }
-    }
-
+    public final Image icon = new Image(MainApplication.class.getResourceAsStream("images/icon.png"));
     @FXML
     private Pane root;
     @FXML
@@ -57,31 +51,23 @@ public class MainController implements Initializable {
     @FXML
     private Label progress_label;
 
+    private List<Button> buttonsToDisable = null;
+
     private void showExceptionError(Exception e) {
-        // TODO: polish this
         e.printStackTrace();
         Alert alert = new Alert(
                 Alert.AlertType.ERROR,
-                "An error has occured: " + e.toString(),
+                "An error has occured: " + e,
                 ButtonType.OK
         );
+        ((Stage) alert.getDialogPane().getScene().getWindow()).getIcons().add(icon);
         alert.show();
     }
 
     private void showWarning(String s) {
-        // TODO: polish this
         Alert alert = new Alert(Alert.AlertType.WARNING, s, ButtonType.OK);
+        ((Stage) alert.getDialogPane().getScene().getWindow()).getIcons().add(icon);
         alert.show();
-    }
-
-    private void buttonSetEnabled(boolean enabled) {
-        launch_button.setDisable(!enabled);
-        minecraft_button.setDisable(!enabled);
-        modpack_button.setDisable(!enabled);
-    }
-
-    private String formatProgressText(int a, int b) {
-        return String.format("%d / %d", a, b);
     }
 
     public void updateUsers() {
@@ -91,74 +77,69 @@ public class MainController implements Initializable {
     }
 
     public void download() {
-        progress_bar.setVisible(true);
-        progress_label.setVisible(true);
-        progress_label.setText(formatProgressText(0, 0));
-        buttonSetEnabled(false);
-
-        final Box<Integer> filesToDownload = new Box<>(2); // client.jar and authlib
-        final Box<Integer> filesDownloaded = new Box<>(0);
-
         try {
             VersionInfo versionInfo = MinecraftApi.getVersionInfo();
             AssetsInfo assetsInfo = MinecraftApi.downloadAssetsInfo(versionInfo);
             FabricMeta meta = FabricApi.getMeta();
-            filesToDownload.value +=
+            int filesToDownload = 2 +
                     versionInfo.getNumberOfLibrariesToDownload()
-                            + assetsInfo.getNumberOfAssetsToDownload()
-                            + meta.getNumberOfLibrariesToDownload();
+                    + assetsInfo.getNumberOfAssetsToDownload()
+                    + meta.getNumberOfLibrariesToDownload();
 
-            progress_label.setText(formatProgressText(filesDownloaded.value, filesToDownload.value));
 
-            Task<Void> task = new Task<>() {
+            Thread t = new Thread(new DownloadTask(progress_label, progress_bar, buttonsToDisable, this::showExceptionError, filesToDownload) {
                 @Override
-                protected Void call() throws Exception {
-                    Downloader.Callback callback = new Downloader.Callback() {
-                        @Override
-                        public void onProgress(Downloader.Task.Result result) {
-                            System.out.printf("DOWNLOAD %s\n", result.filePath);
-
-                            filesDownloaded.value += 1;
-                            progress_bar.setProgress((double) filesDownloaded.value / filesToDownload.value);
-                            updateMessage(formatProgressText(filesDownloaded.value, filesToDownload.value));
-                            Platform.runLater(() -> progress_label.setText(getMessage()));
-                        }
-
-                        @Override
-                        public void onCompleted() {
-                            if (filesDownloaded.value.equals(filesToDownload.value))
-                                return;
-
-                            progress_bar.setVisible(false);
-                            progress_label.setVisible(false);
-                            buttonSetEnabled(true);
-                            CommandLineArguments args = CommandLineArguments.fromVersionInfo(versionInfo).patchFabric(meta).patchAuthLib();
-                            Settings.setArguments(args);
-                        }
-
-                        @Override
-                        public void onFailed() {
-                            System.out.println("FAIL");//showWarning("Failed to download some file; Chaos ensues"); // TODO: implement this
-                        }
-                    };
-
-                    Downloader downloader = Downloader.Builder
-                            .create(callback)
-                            .failBehavior(Downloader.FailBehavior.CANCEL)
-                            .threads(10)
-                            .build();
-
+                public void action(Downloader downloader) throws Exception {
                     MinecraftApi.downloadFromVersionInfo(versionInfo, downloader);
                     FabricApi.downloadFromMeta(meta, downloader);
                     AuthLibInjectorDownloader.download(downloader);
 
                     CommandLineArguments arguments = CommandLineArguments.fromVersionInfo(versionInfo).patchFabric(meta).patchAuthLib();
                     Settings.setArguments(arguments);
-                    return null;
                 }
-            };
+            });
+            t.setDaemon(true);
+            t.start();
+        } catch (Exception e) {
+            e.printStackTrace();
+            showExceptionError(e);
+        }
+    }
 
-            Thread t = new Thread(task);
+    public void downloadModPack() {
+        try {
+            String latestVersion = ModpackApi.getLatestVersion();
+            ModpackMeta meta = ModpackApi.getLatestMeta();
+            int filesToDownload = meta._new.length;
+
+            Thread t = new Thread(new DownloadTask(progress_label, progress_bar, buttonsToDisable, this::showExceptionError, filesToDownload) {
+                @Override
+                public void action(Downloader downloader) throws Exception {
+                    ModpackApi.downloadFromMeta(meta, downloader);
+                    Settings.setModpackVersion(latestVersion);
+                }
+            });
+            t.setDaemon(true);
+            t.start();
+        } catch (Exception e) {
+            e.printStackTrace();
+            showExceptionError(e);
+        }
+    }
+
+    public void downloadUpdate() {
+        try {
+            String latestVersion = ModpackApi.getLatestVersion();
+            ModpackMeta meta = ModpackApi.getUpdateMeta(Settings.getModpackVersion());
+            int filesToDownload = meta._new.length;
+
+            Thread t = new Thread(new DownloadTask(progress_label, progress_bar, buttonsToDisable, this::showExceptionError, filesToDownload) {
+                @Override
+                public void action(Downloader downloader) throws Exception {
+                    ModpackApi.downloadFromMeta(meta, downloader);
+                    Settings.setModpackVersion(latestVersion);
+                }
+            });
             t.setDaemon(true);
             t.start();
         } catch (Exception e) {
@@ -180,11 +161,11 @@ public class MainController implements Initializable {
 
         ((Stage) this.progress_bar.getScene().getWindow()).setIconified(true);
         try {
+            System.out.println(Settings.getArguments().format(user_profiles_choicebox.getValue()));
             Process proc = Runtime.getRuntime().exec(
                     Settings.getArguments().format(user_profiles_choicebox.getValue()),
                     new String[0],
-                    new File(Settings.getHomePath())
-            );
+                    new File(Settings.getHomePath()));
             InputStream in = proc.getInputStream();
             in.transferTo(System.out);
         } catch (IOException e) {
@@ -192,8 +173,38 @@ public class MainController implements Initializable {
         }
     }
 
+    private void checkForUpdate() {
+        if (Settings.getModpackVersion() == null)
+            return;
+
+        String latestVersion;
+        try {
+            latestVersion = ModpackApi.getLatestVersion();
+        } catch (Exception e) {
+            e.printStackTrace();
+            showExceptionError(e);
+            return;
+        }
+
+        if (Settings.getModpackVersion().equals(latestVersion)) {
+            return;
+        }
+
+        Alert alert = new Alert(Alert.AlertType.INFORMATION, "", ButtonType.YES, ButtonType.NO);
+        alert.setHeaderText("Новая версия модпака доступна");
+        alert.setContentText("Обновить модпак с версии " + Settings.getModpackVersion() + " до " + latestVersion + "?");
+        ((Stage) alert.getDialogPane().getScene().getWindow()).getIcons().add(icon); // JavaFX in a nutshell
+        alert.showAndWait().ifPresent((x) -> {
+            if (x == ButtonType.YES) {
+                downloadUpdate();
+            }
+        });
+    }
+
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        buttonsToDisable = List.of(launch_button, minecraft_button, modpack_button);
+
         Backgrounds.Background bg = Backgrounds.getRandom();
         root.setBackground(new Background(new BackgroundImage(bg.image, null, null, null, null)));
         title_label.setTextFill(bg.color);
@@ -209,6 +220,7 @@ public class MainController implements Initializable {
 
         launch_button.setOnAction((x) -> { launchMinecraft(); });
         minecraft_button.setOnAction((x) -> { download(); });
+        modpack_button.setOnAction(x -> { downloadModPack(); });
         settings_button.setOnAction((x) -> {
             try {
                 FXMLLoader loader = new FXMLLoader(MainApplication.class.getResource("views/settings-view.fxml"));
@@ -219,11 +231,14 @@ public class MainController implements Initializable {
                 stage.initModality(Modality.APPLICATION_MODAL);
                 stage.setTitle("Настройки");
                 stage.setResizable(false);
-                stage.getIcons().add(new Image(MainApplication.class.getResourceAsStream("images/icon.png")));
+                stage.getIcons().add(icon);
                 stage.showAndWait();
             } catch (IOException e) {
                 showExceptionError(e);
             }
         });
+
+        // Run this later so the main window has time to be drawn
+        Platform.runLater(this::checkForUpdate);
     }
 }
