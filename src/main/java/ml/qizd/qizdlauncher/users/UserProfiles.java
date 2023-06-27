@@ -12,8 +12,6 @@ import org.jetbrains.annotations.Nullable;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.ListIterator;
 
 public class UserProfiles {
@@ -89,10 +87,12 @@ public class UserProfiles {
             int index = it.nextIndex();
             UserProfile profile = it.next();
             model.profiles[index] = new UserProfilesModel.Profile();
-            model.profiles[index].type = switch (profile) {
-                case ElyByUserProfile p -> "ely";
-                default -> "no_auth";
-            };
+            if (profile instanceof ElyByUserProfile) {
+                model.profiles[index].type = "ely";
+            } else {
+                model.profiles[index].type = "no_auth";
+            }
+
             model.profiles[index].UUID = profile.getUUID();
             model.profiles[index].accessToken = profile.getAccessToken();
             model.profiles[index].username = profile.getName();
