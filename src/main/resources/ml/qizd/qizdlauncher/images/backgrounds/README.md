@@ -1,1 +1,0 @@
-I took these from Google, plz don't sue me T_T
