@@ -2,6 +2,8 @@ package downloader
 
 import (
 	"archive/tar"
+	"archive/zip"
+	"bytes"
 	"compress/gzip"
 	"context"
 	"errors"
@@ -58,9 +60,63 @@ func (c *Client) DownloadAndUnarchive(ctx context.Context, url string, outdir st
 }
 
 func (c *Client) unarchiveZip(ctx context.Context, r io.Reader, outdir string, options Options) error {
+	var buffer bytes.Buffer
+	_, err := io.Copy(&buffer, r)
+	if err != nil {
+		return fmt.Errorf("failed to read from body: %w", err)
+	}
+	bufferReader := bytes.NewReader(buffer.Bytes())
+
+	zipReader, err := zip.NewReader(bufferReader, int64(len(buffer.Bytes())))
+	if err != nil {
+		return fmt.Errorf("failed to create zip reader: %w", err)
+	}
+
+	firstDir := ""
+	for _, file := range zipReader.File {
+		if strings.HasSuffix(file.Name, "/") { // it's a directory
+			if firstDir == "" {
+				firstDir = file.Name
+			}
+
+			outpath := path.Join(outdir, file.Name)
+			if options.extractRootFolder && firstDir != "" && strings.HasPrefix(file.Name, firstDir) {
+				s, _ := strings.CutPrefix(file.Name, firstDir)
+				outpath = path.Join(outdir, s)
+			}
+
+			if err := os.MkdirAll(outpath, 0777); err != nil {
+				return fmt.Errorf("failed to create directory: %w", err)
+			}
+
+			continue
+		}
+
+		// it's a file!
+		outpath := path.Join(outdir, file.Name)
+		if options.extractRootFolder && firstDir != "" && strings.HasPrefix(file.Name, firstDir) {
+			s, _ := strings.CutPrefix(file.Name, firstDir)
+			outpath = path.Join(outdir, s)
+		}
+
+		fileReader, err := file.OpenRaw()
+		if err != nil {
+			return fmt.Errorf("failed to open file: %w", err)
+		}
+
+		outfile, err := os.Create(outpath)
+		if err != nil {
+			return fmt.Errorf("failed to create file: %w", err)
+		}
+
+		if _, err := io.Copy(outfile, fileReader); err != nil {
+			return fmt.Errorf("failed to write to file: %w", err)
+		}
+
+		outfile.Close()
+	}
+
 	return nil
-	//var b bytes.Buffer
-	//zip.NewReader(&b.)
 }
 
 func (c *Client) unarchiveTarGz(ctx context.Context, r io.Reader, outdir string, options Options) error {

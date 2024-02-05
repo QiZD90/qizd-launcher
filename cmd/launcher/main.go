@@ -16,7 +16,7 @@ func main() {
 	adoptiumClient := adoptium.New(httpClient)
 	downloaderClient := downloader.New(httpClient)
 
-	link, err := adoptiumClient.LatestAssetsLink(ctx, "linux", "x64")
+	link, err := adoptiumClient.LatestAssetsLink(ctx, "windows", "x64")
 	if err != nil {
 		log.Fatal(err)
 	}
