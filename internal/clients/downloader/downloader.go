@@ -13,6 +13,12 @@ import (
 	"os"
 	"path"
 	"strings"
+
+	"golang.org/x/sync/errgroup"
+)
+
+const (
+	DOWNLOAD_GOROUTINES = 20
 )
 
 type Client struct {
@@ -23,6 +29,64 @@ func New(httpClient HttpClient) *Client {
 	return &Client{
 		httpClient: httpClient,
 	}
+}
+
+type Resource struct {
+	Url     string
+	Outpath string
+}
+
+func (c *Client) DownloadBatch(ctx context.Context, resources []Resource, opts ...Option) error {
+	options := Options{}
+	for _, option := range opts {
+		option(&options)
+	}
+
+	group, ctx := errgroup.WithContext(ctx)
+	group.SetLimit(DOWNLOAD_GOROUTINES)
+
+	for _, resource := range resources {
+		group.Go(func() error {
+			resource := resource
+
+			req, err := http.NewRequestWithContext(ctx, "GET", resource.Url, nil)
+			if err != nil {
+				return fmt.Errorf("failed to construct new request: %w", err)
+			}
+
+			resp, err := c.httpClient.Do(req)
+			if err != nil {
+				return fmt.Errorf("failed to download: %w", err)
+			}
+			defer resp.Body.Close()
+
+			if resp.StatusCode != http.StatusOK {
+				return fmt.Errorf("failed to download: expected http status 200, got %d", resp.StatusCode)
+			}
+
+			if err := os.MkdirAll(path.Dir(resource.Outpath), 0777); err != nil {
+				return fmt.Errorf("failed to create directory: %w", err)
+			}
+
+			file, err := os.Create(resource.Outpath)
+			if err != nil {
+				return fmt.Errorf("failed to create file: %w", err)
+			}
+
+			_, err = io.Copy(file, resp.Body)
+			if err != nil {
+				return fmt.Errorf("failed to write to file: %w", err)
+			}
+
+			if options.callback != nil {
+				options.callback(resource)
+			}
+
+			return nil
+		})
+	}
+
+	return group.Wait()
 }
 
 func (c *Client) DownloadAndUnarchive(ctx context.Context, url string, outdir string, opts ...Option) error {
