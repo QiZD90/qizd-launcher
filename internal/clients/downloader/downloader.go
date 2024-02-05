@@ -46,9 +46,9 @@ func (c *Client) DownloadBatch(ctx context.Context, resources []Resource, opts .
 	group.SetLimit(DOWNLOAD_GOROUTINES)
 
 	for _, resource := range resources {
-		group.Go(func() error {
-			resource := resource
+		resource := resource
 
+		group.Go(func() error {
 			req, err := http.NewRequestWithContext(ctx, "GET", resource.Url, nil)
 			if err != nil {
 				return fmt.Errorf("failed to construct new request: %w", err)
