@@ -163,7 +163,7 @@ func (c *Client) unarchiveZip(ctx context.Context, r io.Reader, outdir string, o
 			outpath = path.Join(outdir, s)
 		}
 
-		fileReader, err := file.OpenRaw()
+		fileReader, err := file.Open()
 		if err != nil {
 			return fmt.Errorf("failed to open file: %w", err)
 		}

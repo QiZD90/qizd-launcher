@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/samber/lo"
 )
 
 type Client struct {
@@ -70,4 +72,10 @@ func (c *Client) GetAssetIndex(ctx context.Context, url string) (*AssetIndex, er
 
 func (c *Client) FormatAssetUrl(asset AssetObject) string {
 	return fmt.Sprintf("https://resources.download.minecraft.net/%s/%s", asset.Hash[:2], asset.Hash)
+}
+
+func (c *Client) FormatClassPath(meta *Meta) string {
+	return lo.Reduce(meta.Libraries, func(s string, l Library, _ int) string {
+		return lo.Ternary(s == "", l.Downloads.Artifact.Path, s+";"+l.Downloads.Artifact.Path)
+	}, "")
 }
