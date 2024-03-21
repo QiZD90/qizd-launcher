@@ -41,7 +41,7 @@ func main() {
 	}
 
 	if slices.Contains(os.Args, "libraries") {
-		downloaderClient.DownloadBatch(ctx, lo.Map(
+		resources := lo.Map(
 			meta.Libraries,
 			func(l mojang.Library, _ int) downloader.Resource {
 				return downloader.Resource{
@@ -49,7 +49,13 @@ func main() {
 					Outpath: path.Join(".", "minecraft", "libraries", l.Downloads.Artifact.Path),
 				}
 			},
-		), downloader.WithCallback(func(r downloader.Resource) {
+		)
+		resources = append(resources, downloader.Resource{
+			Url:     meta.Downloads.Client.Url,
+			Outpath: path.Join(".", "minecraft", "client.jar"),
+		})
+
+		downloaderClient.DownloadBatch(ctx, resources, downloader.WithCallback(func(r downloader.Resource) {
 			fmt.Println(r)
 		}))
 	}
