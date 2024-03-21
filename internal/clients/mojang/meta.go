@@ -13,6 +13,7 @@ type Meta struct {
 	} `json:"assetIndex"`
 	Libraries []Library `json:"libraries"`
 	MainClass string    `json:"mainClass"`
+	Version   string    `json:"id"`
 }
 
 type Library struct {

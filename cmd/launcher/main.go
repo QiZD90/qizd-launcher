@@ -12,6 +12,7 @@ import (
 	"github.com/QiZD90/qizd-launcher/internal/clients/adoptium"
 	"github.com/QiZD90/qizd-launcher/internal/clients/downloader"
 	"github.com/QiZD90/qizd-launcher/internal/clients/mojang"
+	"github.com/QiZD90/qizd-launcher/internal/services/minecraft"
 	"github.com/samber/lo"
 )
 
@@ -23,13 +24,15 @@ func main() {
 	mojangClient := mojang.New(httpClient)
 	downloaderClient := downloader.New(httpClient)
 
+	minecraftService := minecraft.New()
+
 	if slices.Contains(os.Args, "jre") {
 		link, err := adoptiumClient.LatestAssetsLink(ctx, "windows", "x64")
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		err = downloaderClient.DownloadAndUnarchive(ctx, link, "./jre", downloader.ExtractRootFolder)
+		err = downloaderClient.DownloadAndUnarchive(ctx, link, path.Join(".", "minecraft", "jre"), downloader.ExtractRootFolder)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -77,7 +80,16 @@ func main() {
 		), downloader.WithCallback(func(r downloader.Resource) {
 			fmt.Println(r)
 		}))
+
+		downloaderClient.DownloadBatch(ctx, []downloader.Resource{
+			{
+				Url:     meta.AssetIndex.Url,
+				Outpath: path.Join(".", "minecraft", "assets", "indexes", "1.20.4.json"),
+			},
+		})
 	}
 
-	fmt.Println(mojangClient.FormatClassPath(meta))
+	if err := minecraftService.Launch(meta); err != nil {
+		log.Fatal(err)
+	}
 }
